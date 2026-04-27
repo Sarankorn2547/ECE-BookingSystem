@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ปฏิทินห้อง - ระบบจองห้องประชุม TU</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- FullCalendar 6 CSS -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <style>
+        :root {
+            --fc-border-color: #e4dfd6;
+            --fc-today-bg-color: rgba(255, 207, 80, 0.05);
+            --fc-event-bg-color: var(--tu-red);
+            --fc-event-border-color: var(--tu-red);
+        }
+        .fc {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .fc-header-toolbar {
+            margin-bottom: 2rem !important;
+        }
+        .fc-button-primary {
+            background-color: #fff !important;
+            border-color: #e4dfd6 !important;
+            color: #1a1714 !important;
+            font-weight: 600 !important;
+            text-transform: capitalize !important;
+        }
+        .fc-button-primary:hover {
+            background-color: #f8f5f0 !important;
+        }
+        .fc-button-active {
+            background-color: var(--tu-red) !important;
+            border-color: var(--tu-red) !important;
+            color: white !important;
+        }
+        .fc-col-header-cell {
+            padding: 1rem 0 !important;
+            background: #f8f5f0;
+            font-weight: 800 !important;
+        }
+    </style>
+</head>
+<body hx-boost="true">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logo text-center">
+            <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle mb-2" style="width: 50px; height: 50px;">
+                <span style="color: var(--tu-red); font-weight: 800; font-size: 1.2rem;">TU</span>
+            </div>
+            <h5 class="mb-0 fw-bold small text-white">ROOM BOOKING</h5>
+            <p class="small opacity-75 mb-0" style="font-size: 0.7rem;">DEPT. OF ELECTRICAL & COMPUTER ENG.</p>
+        </div>
+
+        <nav class="nav flex-column">
+            <div class="px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Menu</div>
+            <a class="nav-link" href="dashboard.html">
+                <i class="fa-solid fa-house"></i> Dashboard
+            </a>
+            <a class="nav-link" href="booking-form.html">
+                <i class="fa-solid fa-calendar-plus"></i> จองห้อง
+            </a>
+            <a class="nav-link" href="my-bookings.html">
+                <i class="fa-solid fa-list-check"></i> การจองของฉัน
+            </a>
+            <a class="nav-link active" href="calendar.html">
+                <i class="fa-solid fa-calendar-days"></i> ปฏิทินห้อง
+            </a>
+
+            <div class="mt-4 px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Admin</div>
+            <a class="nav-link" href="admin-approvals.html">
+                <i class="fa-solid fa-clipboard-check"></i> อนุมัติการจอง
+            </a>
+            <a class="nav-link" href="admin-reports.html">
+                <i class="fa-solid fa-chart-pie"></i> รายงาน
+            </a>
+            <a class="nav-link" href="admin-system.html">
+                <i class="fa-solid fa-gears"></i> จัดการระบบ
+            </a>
+
+            <div class="mt-auto pt-4 border-top border-white border-opacity-10">
+                <a class="nav-link text-white-50" href="login.html">
+                    <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <header class="top-header rounded-4 mb-4 shadow-sm">
+            <h4 class="mb-0 fw-bold">ตารางการใช้ห้อง (Calendar)</h4>
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-end d-none d-md-block">
+                    <p class="mb-0 fw-bold small">อ.ดร. ทดสอบ ระบบ</p>
+                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Lecturer • Computer Engineering</p>
+                </div>
+                <div class="bg-light rounded-circle p-2 border">
+                    <i class="fa-solid fa-user-tie fa-lg text-tu-red" style="color: var(--tu-red);"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div class="d-flex align-items-center gap-2">
+                <label class="fw-bold small text-muted text-uppercase">กรองตามห้อง:</label>
+                <select class="form-select form-select-sm border-2 rounded-pill px-3" style="width: 180px;">
+                    <option selected>ทุกห้อง (All Rooms)</option>
+                    <option>406-3</option>
+                    <option>406-5</option>
+                    <option>408-1</option>
+                    <option>408-2/1</option>
+                    <option>408-2/2</option>
+                </select>
+            </div>
+            <div class="d-flex gap-2">
+                <div class="d-flex align-items-center gap-4 me-3 small font-medium">
+                    <div class="d-flex align-items-center gap-2"><span class="rounded-1" style="width: 12px; height: 12px; background-color: var(--tu-red);"></span> อนุมัติแล้ว</div>
+                    <div class="d-flex align-items-center gap-2"><span class="rounded-1" style="width: 12px; height: 12px; background-color: var(--tu-gold);"></span> รออนุมัติ</div>
+                </div>
+                <a href="booking-form.html" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                    <i class="fa-solid fa-plus me-1"></i> จองห้อง
+                </a>
+            </div>
+        </div>
+
+        <div id='calendar'></div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: 'timeGridWeek',
+          headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+          },
+          locale: 'th',
+          slotMinTime: '08:00:00',
+          slotMaxTime: '20:00:00',
+          allDaySlot: false,
+          height: 'auto',
+          events: [
+            {
+              title: 'สอบกลางภาควิชา CN341 (406-3)',
+              start: '2026-04-20T09:00:00',
+              end: '2026-04-20T12:00:00',
+              backgroundColor: '#8c181c', // Approved
+              borderColor: '#8c181c'
+            },
+            {
+              title: 'ประชุมภาควิชา (408-1)',
+              start: '2026-04-21T13:30:00',
+              end: '2026-04-21T15:30:00',
+              backgroundColor: '#ffcf50', // Pending
+              borderColor: '#ffcf50',
+              textColor: '#1a1714'
+            },
+            {
+              title: 'SF220 Software Verification (408-2/1)',
+              start: '2026-04-22T09:30:00',
+              end: '2026-04-22T11:30:00',
+              backgroundColor: '#8c181c',
+              borderColor: '#8c181c'
+            },
+            {
+              title: 'CN421 AI & Machine Learning (406-3)',
+              start: '2026-04-23T13:00:00',
+              end: '2026-04-23T16:00:00',
+              backgroundColor: '#8c181c',
+              borderColor: '#8c181c'
+            }
+          ],
+          dateClick: function(info) {
+            window.location.href = 'booking-form.html?date=' + info.dateStr;
+          }
+        });
+        calendar.render();
+      });
+    </script>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการระบบ - ระบบจองห้องประชุม TU</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body hx-boost="true">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logo text-center">
+            <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle mb-2" style="width: 50px; height: 50px;">
+                <span style="color: var(--tu-red); font-weight: 800; font-size: 1.2rem;">TU</span>
+            </div>
+            <h5 class="mb-0 fw-bold small text-white">ROOM BOOKING</h5>
+            <p class="small opacity-75 mb-0" style="font-size: 0.7rem;">DEPT. OF ELECTRICAL & COMPUTER ENG.</p>
+        </div>
+
+        <nav class="nav flex-column">
+            <div class="px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Menu</div>
+            <a class="nav-link" href="dashboard.html">
+                <i class="fa-solid fa-house"></i> Dashboard
+            </a>
+            <a class="nav-link" href="booking-form.html">
+                <i class="fa-solid fa-calendar-plus"></i> จองห้อง
+            </a>
+            <a class="nav-link" href="my-bookings.html">
+                <i class="fa-solid fa-list-check"></i> การจองของฉัน
+            </a>
+            <a class="nav-link" href="calendar.html">
+                <i class="fa-solid fa-calendar-days"></i> ปฏิทินห้อง
+            </a>
+
+            <div class="mt-4 px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Admin</div>
+            <a class="nav-link" href="admin-approvals.html">
+                <i class="fa-solid fa-clipboard-check"></i> อนุมัติการจอง
+            </a>
+            <a class="nav-link" href="admin-reports.html">
+                <i class="fa-solid fa-chart-pie"></i> รายงาน
+            </a>
+            <a class="nav-link active" href="admin-system.html">
+                <i class="fa-solid fa-gears"></i> จัดการระบบ
+            </a>
+
+            <div class="mt-auto pt-4 border-top border-white border-opacity-10">
+                <a class="nav-link text-white-50" href="login.html">
+                    <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <header class="top-header rounded-4 mb-4 shadow-sm">
+            <h4 class="mb-0 fw-bold">จัดการระบบ (System Management)</h4>
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-end d-none d-md-block">
+                    <p class="mb-0 fw-bold small">เจ้าหน้าที่ ทดสอบ</p>
+                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Admin • Department Staff</p>
+                </div>
+                <div class="bg-light rounded-circle p-2 border">
+                    <i class="fa-solid fa-user-gear fa-lg text-tu-red" style="color: var(--tu-red);"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs border-0 mb-4 bg-white p-2 rounded-4 shadow-sm" id="systemTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active border-0 rounded-3 px-4 fw-bold" id="rooms-tab" data-bs-toggle="tab" data-bs-target="#rooms" type="button" role="tab"><i class="fa-solid fa-door-open me-2"></i>จัดการห้อง</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link border-0 rounded-3 px-4 fw-bold" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab"><i class="fa-solid fa-users-gear me-2"></i>สิทธิ์ผู้ใช้งาน</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link border-0 rounded-3 px-4 fw-bold" id="blackout-tab" data-bs-toggle="tab" data-bs-target="#blackout" type="button" role="tab"><i class="fa-solid fa-calendar-xmark me-2"></i>ปิดปรับปรุง / วันหยุด</button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="systemTabsContent">
+            <!-- Rooms Tab -->
+            <div class="tab-pane fade show active" id="rooms" role="tabpanel">
+                <div class="card border-0 shadow-sm overflow-hidden">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                        <h6 class="mb-0 fw-bold">รายชื่อห้องทังหมด (5 ห้อง)</h6>
+                        <button class="btn btn-primary btn-sm rounded-pill px-4 fw-bold shadow-sm" style="background-color: var(--tu-red);">
+                            <i class="fa-solid fa-plus me-1"></i> เพิ่มห้องใหม่
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted small text-uppercase fw-bold">
+                                <tr>
+                                    <th class="px-4 py-3 border-0">ชื่อห้อง</th>
+                                    <th class="py-3 border-0">ประเภท</th>
+                                    <th class="py-3 border-0 text-center">ความจุ (ที่นั่ง)</th>
+                                    <th class="py-3 border-0 text-center">สถานะ</th>
+                                    <th class="px-4 py-3 border-0 text-end">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="px-4 fw-black">406-3</td>
+                                    <td>ห้องเรียน</td>
+                                    <td class="text-center">60</td>
+                                    <td class="text-center"><span class="badge badge-approved rounded-pill px-3">เปิดใช้งาน</span></td>
+                                    <td class="px-4 text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-1"><i class="fa-regular fa-pen-to-square"></i></button>
+                                        <button class="btn btn-sm btn-outline-danger"><i class="fa-regular fa-trash-can"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 fw-black">406-5</td>
+                                    <td>ห้องประชุม</td>
+                                    <td class="text-center">15</td>
+                                    <td class="text-center"><span class="badge badge-approved rounded-pill px-3">เปิดใช้งาน</span></td>
+                                    <td class="px-4 text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-1"><i class="fa-regular fa-pen-to-square"></i></button>
+                                        <button class="btn btn-sm btn-outline-danger"><i class="fa-regular fa-trash-can"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 fw-black">408-1</td>
+                                    <td>ห้องประชุม</td>
+                                    <td class="text-center">10</td>
+                                    <td class="text-center"><span class="badge badge-cancelled rounded-pill px-3">ปิดปรับปรุง</span></td>
+                                    <td class="px-4 text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-1"><i class="fa-regular fa-pen-to-square"></i></button>
+                                        <button class="btn btn-sm btn-outline-danger"><i class="fa-regular fa-trash-can"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 fw-black">408-2/1</td>
+                                    <td>ห้องเรียน</td>
+                                    <td class="text-center">20</td>
+                                    <td class="text-center"><span class="badge badge-approved rounded-pill px-3">เปิดใช้งาน</span></td>
+                                    <td class="px-4 text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-1"><i class="fa-regular fa-pen-to-square"></i></button>
+                                        <button class="btn btn-sm btn-outline-danger"><i class="fa-regular fa-trash-can"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 fw-black">408-2/2</td>
+                                    <td>ห้องเรียน</td>
+                                    <td class="text-center">20</td>
+                                    <td class="text-center"><span class="badge badge-approved rounded-pill px-3">เปิดใช้งาน</span></td>
+                                    <td class="px-4 text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-1"><i class="fa-regular fa-pen-to-square"></i></button>
+                                        <button class="btn btn-sm btn-outline-danger"><i class="fa-regular fa-trash-can"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div class="tab-pane fade" id="users" role="tabpanel">
+                <div class="card border-0 shadow-sm overflow-hidden">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold">จัดการบทบาทผู้ใช้งาน (Mock Users)</h6>
+                        <div class="d-flex gap-2">
+                            <input type="text" class="form-control form-control-sm rounded-pill px-3" placeholder="ค้นหาชื่อ..." style="width: 200px;">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted small text-uppercase fw-bold">
+                                <tr>
+                                    <th class="px-4 py-3 border-0">ผู้ใช้งาน</th>
+                                    <th class="py-3 border-0">หน่วยงาน</th>
+                                    <th class="py-3 border-0">บทบาทปัจจุบัน</th>
+                                    <th class="px-4 py-3 border-0 text-end">เปลี่ยนสิทธิ์</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="px-4">
+                                        <p class="mb-0 fw-bold">อ.ดร. ทดสอบ ระบบ</p>
+                                        <p class="mb-0 small text-muted">tester.r@engr.tu.ac.th</p>
+                                    </td>
+                                    <td>ECE</td>
+                                    <td><span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 fw-bold">Administrator</span></td>
+                                    <td class="px-4 text-end">
+                                        <select class="form-select form-select-sm d-inline-block border-2" style="width: 140px;">
+                                            <option selected>Admin</option>
+                                            <option>Lecturer</option>
+                                            <option>Staff</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4">
+                                        <p class="mb-0 fw-bold">รศ.ดร. สมชาย ใจดี</p>
+                                        <p class="mb-0 small text-muted">somchai.j@engr.tu.ac.th</p>
+                                    </td>
+                                    <td>ECE</td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 fw-bold">Lecturer</span></td>
+                                    <td class="px-4 text-end">
+                                        <select class="form-select form-select-sm d-inline-block border-2" style="width: 140px;">
+                                            <option>Admin</option>
+                                            <option selected>Lecturer</option>
+                                            <option>Staff</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4">
+                                        <p class="mb-0 fw-bold">ผศ. วิทยา แสงทอง</p>
+                                        <p class="mb-0 small text-muted">vithaya.s@engr.tu.ac.th</p>
+                                    </td>
+                                    <td>ECE</td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 fw-bold">Lecturer</span></td>
+                                    <td class="px-4 text-end">
+                                        <select class="form-select form-select-sm d-inline-block border-2" style="width: 140px;">
+                                            <option>Admin</option>
+                                            <option selected>Lecturer</option>
+                                            <option>Staff</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4">
+                                        <p class="mb-0 fw-bold">คุณ นารี รักความดี</p>
+                                        <p class="mb-0 small text-muted">naree.r@engr.tu.ac.th</p>
+                                    </td>
+                                    <td>Staff / Admin</td>
+                                    <td><span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 fw-bold">Administrator</span></td>
+                                    <td class="px-4 text-end">
+                                        <select class="form-select form-select-sm d-inline-block border-2" style="width: 140px;">
+                                            <option selected>Admin</option>
+                                            <option>Lecturer</option>
+                                            <option>Staff</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4">
+                                        <p class="mb-0 fw-bold">อ. มานี มีวิชา</p>
+                                        <p class="mb-0 small text-muted">manee.m@engr.tu.ac.th</p>
+                                    </td>
+                                    <td>ECE</td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 fw-bold">Lecturer</span></td>
+                                    <td class="px-4 text-end">
+                                        <select class="form-select form-select-sm d-inline-block border-2" style="width: 140px;">
+                                            <option>Admin</option>
+                                            <option selected>Lecturer</option>
+                                            <option>Staff</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4">
+                                        <p class="mb-0 fw-bold">ผศ.ดร. นคร พรหมดี</p>
+                                        <p class="mb-0 small text-muted">nakorn.p@engr.tu.ac.th</p>
+                                    </td>
+                                    <td>ECE</td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 fw-bold">Lecturer</span></td>
+                                    <td class="px-4 text-end">
+                                        <select class="form-select form-select-sm d-inline-block border-2" style="width: 140px;">
+                                            <option>Admin</option>
+                                            <option selected>Lecturer</option>
+                                            <option>Staff</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Blackout Tab -->
+            <div class="tab-pane fade" id="blackout" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-md-5">
+                        <div class="card border-0 shadow-sm p-4 rounded-4">
+                            <h6 class="fw-bold mb-3"><i class="fa-solid fa-calendar-plus me-2 text-warning"></i> เพิ่มช่วงเวลาปิดปรับปรุง</h6>
+                            <form>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">ชื่อเหตุการณ์</label>
+                                    <input type="text" class="form-control rounded-3" placeholder="เช่น วันหยุดยาวสงกรานต์">
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold">เริ่มวันที่</label>
+                                        <input type="date" class="form-control rounded-3">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold">สิ้นสุดวันที่</label>
+                                        <input type="date" class="form-control rounded-3">
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label small fw-bold">ระบุห้อง (Apply to)</label>
+                                    <select class="form-select rounded-3">
+                                        <option value="all">ทุกห้อง (All Rooms)</option>
+                                        <option value="406-3">406-3</option>
+                                        <option value="408-1">408-1</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="btn btn-warning w-100 fw-bold py-2 rounded-pill shadow-sm">
+                                    บันทึกช่วงเวลา
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="card border-0 shadow-sm p-4 rounded-4 h-100">
+                            <h6 class="fw-bold mb-3">รายการวันหยุด / ปิดปรับปรุง</h6>
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="mb-0 fw-bold">วันสงกรานต์ (หยุดประจำปี)</p>
+                                        <p class="mb-0 small text-muted">13 เม.ย. - 15 เม.ย. 2026 • ทุกห้อง</p>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger border-0"><i class="fa-regular fa-trash-can"></i></button>
+                                </div>
+                                <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="mb-0 fw-bold">วันแรงงาน</p>
+                                        <p class="mb-0 small text-muted">1 พ.ค. 2026 • ทุกห้อง</p>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger border-0"><i class="fa-regular fa-trash-can"></i></button>
+                                </div>
+                                <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="mb-0 fw-bold">ซ่อมแซมระบบปรับอากาศ (408-1)</p>
+                                        <p class="mb-0 small text-muted">10 พ.ค. - 12 พ.ค. 2026 • 408-1 เท่านั้น</p>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger border-0"><i class="fa-regular fa-trash-can"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .nav-tabs .nav-link {
+            transition: all 0.2s;
+            color: var(--text-muted);
+        }
+        .nav-tabs .nav-link.active {
+            background-color: var(--tu-red) !important;
+            color: white !important;
+        }
+        .nav-tabs .nav-link:hover:not(.active) {
+            background-color: var(--bg);
+        }
+    </style>
+</body>
+</html>

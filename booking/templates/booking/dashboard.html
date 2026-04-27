@@ -1,0 +1,198 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ระบบจองห้องประชุม TU</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{% static 'booking/styles.css' %}">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logo text-center">
+            <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle mb-2" style="width: 50px; height: 50px;">
+                <span style="color: var(--tu-red); font-weight: 800; font-size: 1.2rem;">TU</span>
+            </div>
+            <h5 class="mb-0 fw-bold small text-white">ROOM BOOKING</h5>
+            <p class="small opacity-75 mb-0" style="font-size: 0.7rem;">DEPT. OF ELECTRICAL & COMPUTER ENG.</p>
+        </div>
+
+        <nav class="nav flex-column">
+            <div class="px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Menu</div>
+            <a class="nav-link active" href="{% url 'booking:dashboard' %}">
+                <i class="fa-solid fa-house"></i> Dashboard
+            </a>
+            <a class="nav-link" href="#">
+                <i class="fa-solid fa-calendar-plus"></i> จองห้อง
+            </a>
+            <a class="nav-link" href="#">
+                <i class="fa-solid fa-list-check"></i> การจองของฉัน
+            </a>
+            <a class="nav-link" href="#">
+                <i class="fa-solid fa-calendar-days"></i> ปฏิทินห้อง
+            </a>
+
+            <div class="mt-4 px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Admin</div>
+            <a class="nav-link" href="#">
+                <i class="fa-solid fa-clipboard-check"></i> อนุมัติการจอง
+            </a>
+            <a class="nav-link" href="#">
+                <i class="fa-solid fa-chart-pie"></i> รายงาน
+            </a>
+            <a class="nav-link" href="#">
+                <i class="fa-solid fa-gears"></i> จัดการระบบ
+            </a>
+
+            <div class="mt-auto pt-4 border-top border-white border-opacity-10">
+                <a class="nav-link text-white-50" href="{% url 'booking:logout' %}">
+                    <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <header class="top-header rounded-4 mb-4 shadow-sm">
+            <h4 class="mb-0 fw-bold">Dashboard</h4>
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-end d-none d-md-block">
+                    <p class="mb-0 fw-bold small">{{ display_name }}</p>
+                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">{{ tu_status|default:"User" }} • {{ department|default:"ECE" }}</p>
+                </div>
+                <div class="bg-light rounded-circle p-2 border">
+                    <i class="fa-solid fa-user-tie fa-lg text-tu-red" style="color: var(--tu-red);"></i>
+                </div>
+            </div>
+        </header>
+
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Welcome Banner -->
+        <div class="card border-0 mb-4 overflow-hidden position-relative" style="background-color: var(--tu-red); color: white;">
+            <div class="position-absolute w-100 h-100 opacity-10" style="background-image: url('https://images.unsplash.com/photo-1617721926586-4eecce739745?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjbGFzc3Jvb20lMjBiYWNrZ3JvdW5kfGVufDF8fHx8MTc3NjcxMjk1NXww&ixlib=rb-4.1.0&q=80&w=1080'); background-size: cover; background-position: center;"></div>
+            <div class="card-body p-4 p-lg-5 position-relative z-index-1">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <h2 class="fw-bold mb-2">ยินดีต้อนรับ, {{ display_name }} 👋</h2>
+                        <p class="lead mb-0 opacity-75">ระบบจองห้องประชุมและห้องเรียน ภาควิชาวิศวกรรมไฟฟ้าและคอมพิวเตอร์</p>
+                    </div>
+                    <div class="col-lg-4 mt-4 mt-lg-0">
+                        <div class="d-flex gap-3 justify-content-lg-end">
+                            <div class="card bg-white bg-opacity-10 border-0 text-center p-3 rounded-4" style="min-width: 100px; backdrop-filter: blur(10px);">
+                                <h3 class="fw-bold mb-0 text-warning">0</h3>
+                                <p class="small mb-0 text-white text-uppercase fw-bold" style="font-size: 0.65rem;">รออนุมัติ</p>
+                            </div>
+                            <div class="card bg-white bg-opacity-10 border-0 text-center p-3 rounded-4" style="min-width: 100px; backdrop-filter: blur(10px);">
+                                <h3 class="fw-bold mb-0 text-success">0</h3>
+                                <p class="small mb-0 text-white text-uppercase fw-bold" style="font-size: 0.65rem;">อนุมัติแล้ว</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <a href="#" class="text-decoration-none h-100 d-block">
+                    <div class="card h-100 stat-card p-3 border-2">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="rounded-4 p-3 bg-danger bg-opacity-10">
+                                <i class="fa-solid fa-calendar-plus fa-xl text-danger"></i>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-muted opacity-50"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">จองห้อง</h5>
+                        <p class="small text-muted mb-0">ทำรายการจองห้องเรียน/ห้องประชุม</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="#" class="text-decoration-none h-100 d-block">
+                    <div class="card h-100 stat-card p-3 border-2">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="rounded-4 p-3 bg-warning bg-opacity-10">
+                                <i class="fa-solid fa-list-check fa-xl text-warning"></i>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-muted opacity-50"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">การจองของฉัน</h5>
+                        <p class="small text-muted mb-0">ดูและจัดการรายการจองของคุณ</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="#" class="text-decoration-none h-100 d-block">
+                    <div class="card h-100 stat-card p-3 border-2">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="rounded-4 p-3 bg-primary bg-opacity-10">
+                                <i class="fa-solid fa-calendar-days fa-xl text-primary"></i>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-muted opacity-50"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">ปฏิทินห้อง</h5>
+                        <p class="small text-muted mb-0">ดูตารางการใช้ห้องทั้งหมด</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Bookings -->
+        <div class="card">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-clock-rotate-left me-2 text-tu-red" style="color: var(--tu-red);"></i> รายการจองล่าสุด</h5>
+                <a href="#" class="btn btn-sm btn-outline-secondary rounded-pill px-3">ดูทั้งหมด</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="px-4 border-0">ห้อง</th>
+                            <th class="border-0">หัวข้อ / วิชา</th>
+                            <th class="border-0">วันที่</th>
+                            <th class="border-0">เวลา</th>
+                            <th class="border-0">สถานะ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-5">
+                                <i class="fa-solid fa-calendar-xmark fa-2x mb-3 d-block opacity-25"></i>
+                                ยังไม่มีรายการจอง
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
