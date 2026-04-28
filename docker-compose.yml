@@ -34,6 +34,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - DJANGO_SETTINGS_MODULE=ece_booking.settings
+      - ALLOWED_HOSTS=217.216.108.16 booking.vivaclubs.site localhost 127.0.0.1
     depends_on:
       db:
         condition: service_healthy
