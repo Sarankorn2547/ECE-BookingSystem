@@ -1,23 +1,39 @@
-name: Deploy to VPS
+name: CD - Auto Deploy to VPS
 
 on:
   push:
-    branches: [main]
+    branches:
+      - deploy # รันเฉพาะเมื่อมีการ push ขึ้น branch deploy
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
+      - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          port: ${{ secrets.VPS_PORT }}
-          key: ${{ secrets.VPS_SSH_KEY }}
+          host: 217.216.108.16
+          username: root
+          port: 8822
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/ece-booking
-            git pull origin main
-            docker compose up -d --build web
-            docker compose exec -T web python manage.py migrate --noinput
+            # ไปยังโฟลเดอร์โปรเจกต์บน VPS (ถ้ายังไม่มีจะทำการ Clone)
+            PROJECT_DIR="/root/ECE-BookingSystem"
+            
+            if [ ! -d "$PROJECT_DIR" ]; then
+              git clone -b deploy https://github.com/Sarankorn2547/ECE-BookingSystem.git "$PROJECT_DIR"
+            fi
+            
+            cd "$PROJECT_DIR"
+            
+            # ดึงโค้ดล่าสุด
+            git pull origin deploy
+            
+            # รันระบบใหม่ (Build และ Up คอนเทนเนอร์)
+            docker compose up -d --build
+            
+            # (Optional) รัน Migration และ Collect static
+            docker compose exec -T web python manage.py migrate
             docker compose exec -T web python manage.py collectstatic --noinput
+            
+            echo "✅ Deployment Successful!"

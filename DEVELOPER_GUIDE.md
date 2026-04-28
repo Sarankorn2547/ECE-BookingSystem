@@ -213,6 +213,18 @@ docker compose restart web
 
 ดู container ทั้งหมดผ่าน Portainer: `portainer.vivaclubs.site`
 
+## 🚀 Auto Deployment (GitHub Actions)
+
+ระบบจะทำการ Deploy อัตโนมัติทุกครั้งที่มีการ Push โค้ดขึ้นไปที่ branch `deploy`
+
+### วิธีตั้งค่าครั้งแรก:
+1.  **นำ Private Key ไปใส่ใน GitHub:**
+    - ไปที่ Repository ใน GitHub -> **Settings** -> **Secrets and variables** -> **Actions**
+    - กด **New repository secret**
+    - ตั้งชื่อว่า `SSH_PRIVATE_KEY`
+    - ก๊อปปี้เนื้อหาในไฟล์ SSH Private Key ของคุณ (ไฟล์ที่ปกติใช้ Login VPS) มาวางในช่อง Value
+2.  **เรียบร้อย!** ครั้งต่อไปที่ใคร Push ขึ้น `deploy` ระบบจะ SSH เข้าไปสั่ง `git pull` และ `docker compose up -d --build` ให้เองที่เครื่อง VPS ครับ
+
 ---
 
 ## 🔍 Debug / Logs
