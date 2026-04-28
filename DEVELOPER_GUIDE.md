@@ -213,7 +213,7 @@ docker compose restart web
 
 ดู container ทั้งหมดผ่าน Portainer: `portainer.vivaclubs.site`
 
-## 🚀 Auto Deployment (GitHub Actions)
+## 🚀 Auto Deployment (GitHub Actions) [STATUS: ACTIVE ✅]
 
 ระบบจะทำการ Deploy อัตโนมัติทุกครั้งที่มีการ Push โค้ดขึ้นไปที่ branch `deploy`
 
