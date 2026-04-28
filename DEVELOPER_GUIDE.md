@@ -57,6 +57,24 @@ Password: <ขอจากทีม>
 
 > พอร์ต 5432 เปิด firewall แล้ว ไม่ต้อง SSH tunnel
 
+### 🐘 การเข้าถึงฐานข้อมูล (Database Access)
+
+เนื่องจากพอร์ตฐานข้อมูล (5432) ถูกเปิดใช้งานเฉพาะภายใน Docker Network เท่านั้น หากต้องการเชื่อมต่อผ่านโปรแกรมภายนอกอย่าง **DBeaver** ต้องใช้ **SSH Tunnel** ดังนี้:
+
+| Setting | Value |
+|---------|-------|
+| **Host** | `db` |
+| **Port** | `5432` |
+| **Database** | `postgres` |
+| **Username** | `postgres` |
+| **Password** | `postgres` |
+
+**SSH Tunnel Settings:**
+- **SSH Host:** `217.216.108.16`
+- **SSH Port:** `8822`
+- **SSH User:** `root`
+- **Auth Method:** `Private Key` (เช่น `~/.ssh/id_ed25519`)
+
 ---
 
 ## 🔐 Environment Variables
