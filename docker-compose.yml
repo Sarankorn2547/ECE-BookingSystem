@@ -5,8 +5,17 @@ services:
     volumes:
       - .:/app
       - static_volume:/app/staticfiles
-    env_file:
-      - .env
+    environment:
+      - DEBUG=${DEBUG}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SQL_HOST=${SQL_HOST}
+      - SQL_PORT=${SQL_PORT}
+      - DOMAIN=${DOMAIN}
+      - TU_REST_API=${TU_REST_API}
     ports:
       - "8001:8000"
     networks:
