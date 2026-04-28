@@ -6,10 +6,12 @@ services:
     volumes:
       - .:/app
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - TYPHOON_API_KEY=${TYPHOON_API_KEY}
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
     expose:
       - 8000
+    labels:
+      - "com.ece.allow_logs=true" # ให้ Dozzle มองเห็นตัวนี้ด้วย
 
   caddy:
     image: caddy:2-alpine
@@ -23,6 +25,8 @@ services:
       - caddy_config:/config
     depends_on:
       - web
+    labels:
+      - "com.ece.allow_logs=true"
 
 volumes:
   caddy_data:
