@@ -4,6 +4,10 @@ services:
     container_name: ece-db
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres # ใส่รหัสผ่านเริ่มต้นไว้ให้เลยครับ
     expose:
       - 5432
     healthcheck:
@@ -26,6 +30,11 @@ services:
     environment:
       - SQL_HOST=db
       - SQL_PORT=5432
+      - DATABASE=postgres
+      - SQL_DATABASE=postgres
+      - SQL_USER=postgres
+      - SQL_PASSWORD=postgres
+      - DJANGO_SETTINGS_MODULE=ece_booking.settings
     depends_on:
       db:
         condition: service_healthy
