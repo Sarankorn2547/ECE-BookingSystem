@@ -246,6 +246,25 @@ docker compose restart web
     - ก๊อปปี้เนื้อหาในไฟล์ SSH Private Key ของคุณ (ไฟล์ที่ปกติใช้ Login VPS) มาวางในช่อง Value
 2.  **เรียบร้อย!** ครั้งต่อไปที่ใคร Push ขึ้น `deploy` ระบบจะ SSH เข้าไปสั่ง `git pull` และ `docker compose up -d --build` ให้เองที่เครื่อง VPS ครับ
 
+### 💻 การพัฒนาโปรเจกต์ที่เครื่องตัวเอง (Local Development)
+
+หากต้องการรันโค้ดที่เครื่องตัวเอง (เช่น `python manage.py runserver`) แต่ต้องการให้เชื่อมต่อกับฐานข้อมูลจริงบน VPS ให้ตั้งค่าในไฟล์ `.env` ดังนี้:
+URL: jdbc:postgresql://217.216.108.16:5432/postgres
+```env
+# ฐานข้อมูล (ชี้ไปที่ VPS)
+SQL_HOST=217.216.108.16
+SQL_PORT=5432
+POSTGRES_DB=postgres
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+
+# Django
+DEBUG=True
+ALLOWED_HOSTS=localhost 127.0.0.1
+```
+
+> **หมายเหตุ:** แนะนำให้ใช้ฐานข้อมูลแยกสำหรับการพัฒนา (Local DB) เพื่อความปลอดภัยของข้อมูลจริง
+
 ---
 
 ## 🔍 Debug / Logs
