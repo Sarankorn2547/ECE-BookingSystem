@@ -1,3 +1,20 @@
 booking.vivaclubs.site {
-    reverse_proxy web:8000
+    encode gzip
+
+    # Static files from ECE-BookingSystem
+    handle /static/* {
+        reverse_proxy host.docker.internal:8001
+    }
+
+    # Teams Bot NLP endpoint
+    handle /api/nlp/* {
+        reverse_proxy web:8000
+    }
+
+    # Everything else → ECE-BookingSystem
+    reverse_proxy host.docker.internal:8001
+}
+
+portainer.vivaclubs.site {
+    reverse_proxy host.docker.internal:9000
 }
