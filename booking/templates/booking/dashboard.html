@@ -35,7 +35,7 @@
             <a class="nav-link active" href="{% url 'booking:dashboard' %}">
                 <i class="fa-solid fa-house"></i> Dashboard
             </a>
-            <a class="nav-link" href="#">
+            <a class="nav-link" href="{% url 'booking:booking_form' %}">
                 <i class="fa-solid fa-calendar-plus"></i> จองห้อง
             </a>
             <a class="nav-link" href="#">
@@ -119,7 +119,7 @@
         <!-- Quick Actions -->
         <div class="row g-4 mb-4">
             <div class="col-md-4">
-                <a href="#" class="text-decoration-none h-100 d-block">
+                <a href="{% url 'booking:booking_form' %}" class="text-decoration-none h-100 d-block">
                     <div class="card h-100 stat-card p-3 border-2">
                         <div class="d-flex align-items-center justify-content-between mb-3">
                             <div class="rounded-4 p-3 bg-danger bg-opacity-10">
