@@ -205,10 +205,13 @@ docker compose restart web
 
 | Container | Stack | Port | หน้าที่ |
 |-----------|-------|------|--------|
-| `ece-booking-web-1` | ece-booking | 8001→8000 | ECE Web UI |
-| `room_booking_nlp-web-1` | room_booking_nlp | 8000 (internal) | Teams Bot API |
-| `room_booking_nlp-caddy-1` | room_booking_nlp | 80, 443 | Reverse Proxy + HTTPS |
-| `server-db-1` | server | 5432 | PostgreSQL |
+| `ece-web` | ece-bookingsystem | 8000 (internal) | ECE Web UI (Django) |
+| `ece-nginx` | ece-bookingsystem | 8081→80 | Web Entry Point (Nginx) |
+| `ece-db` | ece-bookingsystem | 5432 | ECE PostgreSQL 16 |
+| `ece-dozzle` | ece-bookingsystem | 8888→8080 | Log Viewer (All Projects) |
+| `room_booking_nlp-web-1` | room_booking_nlp | 8000 (internal) | Teams Bot NLP (Django) |
+| `room_booking_nlp-caddy-1` | room_booking_nlp | 80, 443 | Teams Bot HTTPS Entry |
+| `server-db-1` | server | 5432 | Shared PostgreSQL 15 |
 | `portainer` | - | 9000 | Container Management |
 
 ดู container ทั้งหมดผ่าน Portainer: `portainer.vivaclubs.site`
