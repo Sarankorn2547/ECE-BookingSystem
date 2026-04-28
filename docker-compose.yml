@@ -4,10 +4,7 @@ services:
     container_name: ece-db
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-    environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+    env_file: .env
     expose:
       - 5432
     healthcheck:
@@ -27,14 +24,9 @@ services:
     volumes:
       - static_volume:/app/static
       - media_volume:/app/media
+    env_file: .env
     environment:
-      - SQL_HOST=db
-      - SQL_PORT=5432
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
       - DJANGO_SETTINGS_MODULE=ece_booking.settings
-      - ALLOWED_HOSTS=217.216.108.16 booking.vivaclubs.site localhost 127.0.0.1
     depends_on:
       db:
         condition: service_healthy
