@@ -11,6 +11,10 @@ then
     echo "PostgreSQL started"
 fi
 
+# Print structure for debugging (Optional, can be removed after success)
+echo "Current directory structure:"
+ls -F
+
 # Run migrations
 python manage.py migrate --noinput
 # Collect static files
