@@ -5,7 +5,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_DB=ece_booking
+      - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     expose:
@@ -30,7 +30,7 @@ services:
     environment:
       - SQL_HOST=db
       - SQL_PORT=5432
-      - POSTGRES_DB=ece_booking
+      - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - DJANGO_SETTINGS_MODULE=ece_booking.settings
