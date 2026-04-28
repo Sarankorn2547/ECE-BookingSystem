@@ -130,3 +130,40 @@ def dashboard_view(request):
         "active_page": "dashboard",
     }
     return render(request, "booking/dashboard.html", context)
+
+
+@login_required
+def booking_form_view(request):
+    """Booking form page — requires login."""
+    tu_profile = request.session.get("tu_profile", {})
+    context = {
+        "tu_profile": tu_profile,
+        "display_name": tu_profile.get("display_name_th") or tu_profile.get("display_name_en") or request.user.username,
+        "active_page": "booking",
+    }
+    return render(request, "booking/booking-form.html", context)
+
+
+@login_required
+def my_bookings_view(request):
+    """My bookings page — requires login."""
+    tu_profile = request.session.get("tu_profile", {})
+    context = {
+        "tu_profile": tu_profile,
+        "display_name": tu_profile.get("display_name_th") or tu_profile.get("display_name_en") or request.user.username,
+        "active_page": "my_bookings",
+    }
+    return render(request, "booking/my-bookings.html", context)
+
+
+@login_required
+def calendar_view(request):
+    """Calendar page — requires login."""
+    tu_profile = request.session.get("tu_profile", {})
+    context = {
+        "tu_profile": tu_profile,
+        "display_name": tu_profile.get("display_name_th") or tu_profile.get("display_name_en") or request.user.username,
+        "active_page": "calendar",
+    }
+    return render(request, "booking/calendar.html", context)
+

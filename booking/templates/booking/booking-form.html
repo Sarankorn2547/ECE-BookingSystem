@@ -1,105 +1,82 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>จองห้อง - ระบบจองห้องประชุม TU</title>
-    
+    <title>จองห้อง - ระบบจองห้อง ECE</title>
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap"
+        rel="stylesheet">
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="styles.css">
-    <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="{% static 'booking/styles.css' %}">
 </head>
-<body hx-boost="true">
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-logo text-center">
-            <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle mb-2" style="width: 50px; height: 50px;">
-                <span style="color: var(--tu-red); font-weight: 800; font-size: 1.2rem;">TU</span>
-            </div>
-            <h5 class="mb-0 fw-bold small text-white">ROOM BOOKING</h5>
-            <p class="small opacity-75 mb-0" style="font-size: 0.7rem;">DEPT. OF ELECTRICAL & COMPUTER ENG.</p>
+<body>
+
+    <!-- Top Navbar -->
+    {% include 'booking/navbar.html' %}
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="page-header-bg"></div>
+        <div class="page-header-content">
+            <h1 class="page-header-title"><i class="fa-solid fa-calendar-plus me-3"></i>จองห้อง</h1>
+            <p class="page-header-subtitle">Book Room — เลือกห้อง กำหนดเวลา ส่งคำขอจอง</p>
         </div>
+    </section>
 
-        <nav class="nav flex-column">
-            <div class="px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Menu</div>
-            <a class="nav-link" href="dashboard.html">
-                <i class="fa-solid fa-house"></i> Dashboard
-            </a>
-            <a class="nav-link active" href="booking-form.html">
-                <i class="fa-solid fa-calendar-plus"></i> จองห้อง
-            </a>
-            <a class="nav-link" href="my-bookings.html">
-                <i class="fa-solid fa-list-check"></i> การจองของฉัน
-            </a>
-            <a class="nav-link" href="calendar.html">
-                <i class="fa-solid fa-calendar-days"></i> ปฏิทินห้อง
-            </a>
-
-            <div class="mt-4 px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Admin</div>
-            <a class="nav-link" href="admin-approvals.html">
-                <i class="fa-solid fa-clipboard-check"></i> อนุมัติการจอง
-            </a>
-            <a class="nav-link" href="admin-reports.html">
-                <i class="fa-solid fa-chart-pie"></i> รายงาน
-            </a>
-            <a class="nav-link" href="admin-system.html">
-                <i class="fa-solid fa-gears"></i> จัดการระบบ
-            </a>
-
-            <div class="mt-auto pt-4 border-top border-white border-opacity-10">
-                <a class="nav-link text-white-50" href="login.html">
-                    <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
-                </a>
-            </div>
-        </nav>
+    <!-- Toast Messages -->
+    {% if messages %}
+    <div class="home-toast-container" id="toast-container">
+        {% for message in messages %}
+        <div class="home-toast home-toast-{{ message.tags }}">
+            {% if 'success' in message.tags %}
+            <i class="fa-solid fa-circle-check"></i>
+            {% elif 'error' in message.tags or 'danger' in message.tags %}
+            <i class="fa-solid fa-circle-exclamation"></i>
+            {% else %}
+            <i class="fa-solid fa-circle-info"></i>
+            {% endif %}
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
     </div>
+    {% endif %}
 
     <!-- Main Content -->
-    <div class="main-content">
-        <!-- Top Header -->
-        <header class="top-header rounded-4 mb-4 shadow-sm">
-            <h4 class="mb-0 fw-bold">จองห้อง (Book Room)</h4>
-            <div class="d-flex align-items-center gap-3">
-                <div class="text-end d-none d-md-block">
-                    <p class="mb-0 fw-bold small">อ.ดร. ทดสอบ ระบบ</p>
-                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Lecturer • Computer Engineering</p>
-                </div>
-                <div class="bg-light rounded-circle p-2 border">
-                    <i class="fa-solid fa-user-tie fa-lg text-tu-red" style="color: var(--tu-red);"></i>
-                </div>
-            </div>
-        </header>
-
+    <div class="page-content">
         <div class="row justify-content-center">
             <div class="col-xl-9">
-                <form action="#" method="POST" class="space-y-4">
+                <form action="#" method="POST">
+                    {% csrf_token %}
+
                     <!-- Step 1: Select Room -->
-                    <div class="card mb-4 border-0 shadow-sm border-top border-4 border-tu-red" style="border-top-color: var(--tu-red) !important;">
-                        <div class="card-header bg-white py-3">
-                            <h5 class="mb-0 fw-bold d-flex align-items-center gap-2">
-                                <span class="badge rounded-circle bg-danger-subtle text-danger p-2 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.8rem;">1</span>
+                    <div class="ece-card mb-4">
+                        <div class="ece-card-header">
+                            <h5>
+                                <span class="step-badge red">1</span>
                                 เลือกห้อง
                             </h5>
                         </div>
-                        <div class="card-body">
+                        <div class="ece-card-body">
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <input type="radio" class="btn-check" name="room" id="room406-3" autocomplete="off" checked>
-                                    <label class="btn btn-outline-light text-start p-3 w-100 border-2 rounded-4 shadow-sm" for="room406-3">
+                                    <label class="room-select-card" for="room406-3">
                                         <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="h5 fw-bold mb-0 text-dark">406-3</span>
-                                            <i class="fa-solid fa-circle-check text-tu-red d-none"></i>
+                                            <span class="h5 fw-bold mb-0">406-3</span>
+                                            <i class="fa-solid fa-circle-check room-check-icon"></i>
                                         </div>
                                         <div class="small text-muted mb-2"><i class="fa-solid fa-users me-1"></i> 60 ที่นั่ง</div>
                                         <span class="badge bg-light text-dark border fw-normal">ห้องเรียน</span>
@@ -107,9 +84,10 @@
                                 </div>
                                 <div class="col-md-4">
                                     <input type="radio" class="btn-check" name="room" id="room406-5" autocomplete="off">
-                                    <label class="btn btn-outline-light text-start p-3 w-100 border-2 rounded-4 shadow-sm" for="room406-5">
+                                    <label class="room-select-card" for="room406-5">
                                         <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="h5 fw-bold mb-0 text-dark">406-5</span>
+                                            <span class="h5 fw-bold mb-0">406-5</span>
+                                            <i class="fa-solid fa-circle-check room-check-icon"></i>
                                         </div>
                                         <div class="small text-muted mb-2"><i class="fa-solid fa-users me-1"></i> 15 ที่นั่ง</div>
                                         <span class="badge bg-light text-dark border fw-normal">ห้องประชุม</span>
@@ -117,9 +95,10 @@
                                 </div>
                                 <div class="col-md-4">
                                     <input type="radio" class="btn-check" name="room" id="room408-1" autocomplete="off">
-                                    <label class="btn btn-outline-light text-start p-3 w-100 border-2 rounded-4 shadow-sm" for="room408-1">
+                                    <label class="room-select-card" for="room408-1">
                                         <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="h5 fw-bold mb-0 text-dark">408-1</span>
+                                            <span class="h5 fw-bold mb-0">408-1</span>
+                                            <i class="fa-solid fa-circle-check room-check-icon"></i>
                                         </div>
                                         <div class="small text-muted mb-2"><i class="fa-solid fa-users me-1"></i> 10 ที่นั่ง</div>
                                         <span class="badge bg-light text-dark border fw-normal">ห้องประชุม</span>
@@ -127,9 +106,10 @@
                                 </div>
                                 <div class="col-md-4">
                                     <input type="radio" class="btn-check" name="room" id="room408-2-1" autocomplete="off">
-                                    <label class="btn btn-outline-light text-start p-3 w-100 border-2 rounded-4 shadow-sm" for="room408-2-1">
+                                    <label class="room-select-card" for="room408-2-1">
                                         <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="h5 fw-bold mb-0 text-dark">408-2/1</span>
+                                            <span class="h5 fw-bold mb-0">408-2/1</span>
+                                            <i class="fa-solid fa-circle-check room-check-icon"></i>
                                         </div>
                                         <div class="small text-muted mb-2"><i class="fa-solid fa-users me-1"></i> 20 ที่นั่ง</div>
                                         <span class="badge bg-light text-dark border fw-normal">ห้องเรียน</span>
@@ -137,9 +117,10 @@
                                 </div>
                                 <div class="col-md-4">
                                     <input type="radio" class="btn-check" name="room" id="room408-2-2" autocomplete="off">
-                                    <label class="btn btn-outline-light text-start p-3 w-100 border-2 rounded-4 shadow-sm" for="room408-2-2">
+                                    <label class="room-select-card" for="room408-2-2">
                                         <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="h5 fw-bold mb-0 text-dark">408-2/2</span>
+                                            <span class="h5 fw-bold mb-0">408-2/2</span>
+                                            <i class="fa-solid fa-circle-check room-check-icon"></i>
                                         </div>
                                         <div class="small text-muted mb-2"><i class="fa-solid fa-users me-1"></i> 20 ที่นั่ง</div>
                                         <span class="badge bg-light text-dark border fw-normal">ห้องเรียน</span>
@@ -150,51 +131,51 @@
                     </div>
 
                     <!-- Step 2: Purpose -->
-                    <div class="card mb-4 border-0 shadow-sm">
-                        <div class="card-header bg-white py-3">
-                            <h5 class="mb-0 fw-bold d-flex align-items-center gap-2">
-                                <span class="badge rounded-circle bg-warning-subtle text-warning p-2 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.8rem;">2</span>
+                    <div class="ece-card mb-4">
+                        <div class="ece-card-header">
+                            <h5>
+                                <span class="step-badge yellow">2</span>
                                 วัตถุประสงค์
                             </h5>
                         </div>
-                        <div class="card-body">
+                        <div class="ece-card-body">
                             <div class="row g-3 mb-4">
                                 <div class="col-6">
-                                    <button type="button" class="btn btn-dark w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-2 rounded-3">
+                                    <button type="button" class="ece-purpose-btn active">
                                         <i class="fa-solid fa-graduation-cap"></i> สอนปกติ/ชดเชย
                                     </button>
                                 </div>
                                 <div class="col-6">
-                                    <button type="button" class="btn btn-outline-secondary w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-2 rounded-3 text-dark">
+                                    <button type="button" class="ece-purpose-btn">
                                         <i class="fa-solid fa-circle-info"></i> จัดอบรม/จัดติว
                                     </button>
                                 </div>
                             </div>
 
-                            <div class="p-4 bg-light rounded-4 border">
+                            <div class="ece-detail-box">
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label class="form-label fw-bold">รหัสวิชา</label>
-                                        <input type="text" class="form-control" placeholder="เช่น CN341">
+                                        <label class="ece-form-label">รหัสวิชา</label>
+                                        <input type="text" class="ece-form-input" placeholder="เช่น CN341">
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label fw-bold">ชื่อวิชา</label>
-                                        <input type="text" class="form-control" placeholder="เช่น Software Engineering">
+                                        <label class="ece-form-label">ชื่อวิชา</label>
+                                        <input type="text" class="ece-form-input" placeholder="เช่น Software Engineering">
                                     </div>
                                     <div class="col-12 mt-3">
-                                        <label class="form-label fw-bold d-block mb-3">หลักสูตร (Program)</label>
+                                        <label class="ece-form-label d-block mb-3">หลักสูตร (Program)</label>
                                         <div class="d-flex flex-wrap gap-2">
                                             <input type="radio" class="btn-check" name="program" id="prog1" autocomplete="off" checked>
-                                            <label class="btn btn-outline-secondary px-4 rounded-pill small" for="prog1">ปริญญาตรีภาคปกติ</label>
-                                            
+                                            <label class="ece-pill-btn" for="prog1">ปริญญาตรีภาคปกติ</label>
+
                                             <input type="radio" class="btn-check" name="program" id="prog2" autocomplete="off">
-                                            <label class="btn btn-outline-secondary px-4 rounded-pill small" for="prog2">ปริญญาโท</label>
+                                            <label class="ece-pill-btn" for="prog2">ปริญญาโท</label>
 
                                             <input type="radio" class="btn-check" name="program" id="prog3" autocomplete="off">
-                                            <label class="btn btn-outline-secondary px-4 rounded-pill small" for="prog3">TEP-TEPE</label>
+                                            <label class="ece-pill-btn" for="prog3">TEP-TEPE</label>
 
                                             <input type="radio" class="btn-check" name="program" id="prog4" autocomplete="off">
-                                            <label class="btn btn-outline-secondary px-4 rounded-pill small" for="prog4">TU-PINE</label>
+                                            <label class="ece-pill-btn" for="prog4">TU-PINE</label>
                                         </div>
                                     </div>
                                 </div>
@@ -203,93 +184,93 @@
                     </div>
 
                     <!-- Step 3: Date & Time -->
-                    <div class="card mb-4 border-0 shadow-sm">
-                        <div class="card-header bg-white py-3">
-                            <h5 class="mb-0 fw-bold d-flex align-items-center gap-2">
-                                <span class="badge rounded-circle bg-primary-subtle text-primary p-2 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.8rem;">3</span>
+                    <div class="ece-card mb-4">
+                        <div class="ece-card-header">
+                            <h5>
+                                <span class="step-badge blue">3</span>
                                 วันและเวลา
                             </h5>
                         </div>
-                        <div class="card-body">
+                        <div class="ece-card-body">
                             <div class="row g-4 mb-4">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">ตั้งแต่วันที่</label>
-                                    <input type="date" class="form-control">
+                                    <label class="ece-form-label">ตั้งแต่วันที่</label>
+                                    <input type="date" class="ece-form-input">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">ถึงวันที่</label>
-                                    <input type="date" class="form-control">
+                                    <label class="ece-form-label">ถึงวันที่</label>
+                                    <input type="date" class="ece-form-input">
                                 </div>
                             </div>
 
-                            <!-- Recurring Hint -->
+                            <!-- Recurring -->
                             <div class="mb-4">
-                                <label class="form-label fw-bold d-block mb-3">จองแบบซ้ำ (Recurring Pattern)</label>
-                                <div class="bg-light p-3 rounded-4 border shadow-sm">
+                                <label class="ece-form-label d-block mb-3">จองแบบซ้ำ (Recurring Pattern)</label>
+                                <div class="ece-detail-box">
                                     <div class="d-flex flex-wrap gap-2">
-                                        <div class="form-check form-check-inline bg-white px-3 py-2 rounded-3 border me-0">
+                                        <div class="ece-day-check">
                                             <input class="form-check-input" type="checkbox" id="dayFull" value="all">
                                             <label class="form-check-label fw-bold" for="dayFull">ทุกวัน</label>
                                         </div>
-                                        <div class="form-check form-check-inline bg-white px-3 py-2 rounded-3 border me-0">
+                                        <div class="ece-day-check">
                                             <input class="form-check-input" type="checkbox" id="mon" value="mon">
                                             <label class="form-check-label" for="mon">จันทร์</label>
                                         </div>
-                                        <div class="form-check form-check-inline bg-white px-3 py-2 rounded-3 border me-0">
+                                        <div class="ece-day-check">
                                             <input class="form-check-input" type="checkbox" id="tue" value="tue">
                                             <label class="form-check-label" for="tue">อังคาร</label>
                                         </div>
-                                        <div class="form-check form-check-inline bg-white px-3 py-2 rounded-3 border me-0">
+                                        <div class="ece-day-check">
                                             <input class="form-check-input" type="checkbox" id="wed" value="wed" checked>
                                             <label class="form-check-label" for="wed">พุธ</label>
                                         </div>
-                                        <div class="form-check form-check-inline bg-white px-3 py-2 rounded-3 border me-0">
+                                        <div class="ece-day-check">
                                             <input class="form-check-input" type="checkbox" id="thu" value="thu">
                                             <label class="form-check-label" for="thu">พฤหัส</label>
                                         </div>
-                                        <div class="form-check form-check-inline bg-white px-3 py-2 rounded-3 border me-0">
+                                        <div class="ece-day-check">
                                             <input class="form-check-input" type="checkbox" id="fri" value="fri" checked>
                                             <label class="form-check-label" for="fri">ศุกร์</label>
                                         </div>
                                     </div>
                                     <div class="mt-3 small text-muted">
-                                        <i class="fa-solid fa-circle-info me-1"></i> ระบบจะจองให้เฉพาะวันเสาร์-อาทิตย์ ที่เลือกในช่วงวันที่ระบุข้างต้น
+                                        <i class="fa-solid fa-circle-info me-1"></i> ระบบจะจองให้เฉพาะวันที่เลือกในช่วงวันที่ระบุข้างต้น
                                     </div>
                                 </div>
                             </div>
 
                             <div class="row g-4 mb-4">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">เวลาเริ่มต้น</label>
-                                    <input type="time" class="form-control" value="09:00">
+                                    <label class="ece-form-label">เวลาเริ่มต้น</label>
+                                    <input type="time" class="ece-form-input" value="09:00">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">เวลาสิ้นสุด</label>
-                                    <input type="time" class="form-control" value="12:00">
+                                    <label class="ece-form-label">เวลาสิ้นสุด</label>
+                                    <input type="time" class="ece-form-input" value="12:00">
                                 </div>
                             </div>
 
-                            <!-- Conflict Mockup -->
-                            <div class="alert alert-danger d-flex align-items-center rounded-4 border-start border-4" role="alert">
-                                <i class="fa-solid fa-triangle-exclamation fa-lg me-3"></i>
+                            <!-- Conflict Alert -->
+                            <div class="ece-alert-conflict">
+                                <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
                                 <div>
-                                    <h6 class="alert-heading fw-bold mb-1">พบการชนกันของเวลา (Schedule Conflict)</h6>
+                                    <h6 class="fw-bold mb-1">พบการชนกันของเวลา (Schedule Conflict)</h6>
                                     <p class="mb-0 small">ห้อง 406-3 มีการใช้งานแล้วโดย <span class="fw-bold">อ.สมชาย (วิชา CN101)</span> ในช่วงเวลา 10:00 - 12:00 วันพุธที่ 22 เม.ย.</p>
                                 </div>
                             </div>
 
                             <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
                                 <button type="button" class="btn btn-link text-muted text-decoration-none fw-bold px-4">ยกเลิก</button>
-                                <button type="button" class="btn btn-primary px-5 fw-bold rounded-pill shadow-sm" style="background-color: var(--tu-red) !important;">
-                                    ส่งคำขอจอง
+                                <button type="submit" class="ece-btn-primary px-5">
+                                    <i class="fa-solid fa-paper-plane me-2"></i>ส่งคำขอจอง
                                 </button>
                             </div>
                         </div>
                     </div>
                 </form>
-                
+
                 <!-- Email Hint -->
-                <div class="text-center mt-2">
+                <div class="text-center mt-2 mb-5">
                     <p class="small text-muted"><i class="fa-regular fa-envelope me-1"></i> หลังส่งคำขอ ระบบจะส่งอีเมลแจ้งเจ้าหน้าที่เพื่อพิจารณาอนุมัติ</p>
                 </div>
             </div>
@@ -298,16 +279,26 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <style>
-        .btn-check:checked + .btn-outline-light {
-            border-color: var(--tu-red) !important;
-            background-color: #fff !important;
-            box-shadow: 0 0 0 0.25rem rgba(140, 24, 28, 0.1) !important;
-        }
-        .btn-check:checked + .btn-outline-light .text-dark {
-            color: var(--tu-red) !important;
-        }
-    </style>
+    <script>
+        // Auto-dismiss toast messages after 3 seconds
+        document.addEventListener('DOMContentLoaded', function () {
+            const container = document.getElementById('toast-container');
+            if (container) {
+                setTimeout(function () {
+                    container.classList.add('home-toast-hide');
+                    setTimeout(function () { container.remove(); }, 500);
+                }, 3000);
+            }
+
+            // Purpose button toggle
+            document.querySelectorAll('.ece-purpose-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('.ece-purpose-btn').forEach(function (b) { b.classList.remove('active'); });
+                    this.classList.add('active');
+                });
+            });
+        });
+    </script>
 </body>
+
 </html>

@@ -634,6 +634,392 @@ body {
 
 
 /* =========================================
+   SHARED PAGE LAYOUT (All inner pages)
+   ========================================= */
+
+/* --- Page Header (compact hero for sub-pages) --- */
+.page-header {
+  position: relative;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  padding-top: 80px;
+}
+
+.page-header-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('https://engr.tu.ac.th/uploads/images_virtual_bg/2021.7.12_210712_7_.jpg');
+  background-size: cover;
+  background-position: center 35%;
+  z-index: 0;
+}
+
+.page-header-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+      rgba(255, 255, 255, 0.4) 0%,
+      rgba(255, 255, 255, 0.6) 40%,
+      rgba(245, 247, 250, 0.9) 85%,
+      rgba(245, 247, 250, 1) 100%);
+}
+
+.page-header-content {
+  position: relative;
+  z-index: 1;
+  padding: 30px 20px 20px;
+}
+
+.page-header-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--font-dark-blue);
+  margin-bottom: 6px;
+  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.6);
+}
+
+.page-header-subtitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+/* --- Page Content Wrapper --- */
+.page-content {
+  max-width: 1100px;
+  margin: 24px auto;
+  padding: 0 40px 40px;
+}
+
+/* --- ECE Card (Step cards, etc.) --- */
+.ece-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.ece-card-header {
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+
+.ece-card-header h5 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--font-dark-blue);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ece-card-body {
+  padding: 24px 28px;
+}
+
+.ece-card-footer {
+  padding: 16px 28px;
+  border-top: 1px solid var(--border);
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* --- Step Badge --- */
+.step-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.step-badge.red { background-color: rgba(220, 38, 38, 0.15); color: #dc2626; }
+.step-badge.yellow { background-color: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.step-badge.blue { background-color: rgba(111, 223, 254, 0.2); color: #0891b2; }
+
+/* --- ECE Form Inputs --- */
+.ece-form-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.ece-form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid var(--font-grey);
+  border-radius: 10px;
+  font-family: 'Sarabun', sans-serif;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  outline: none;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.ece-form-input:focus {
+  border-color: var(--ece-blue);
+  box-shadow: 0 0 0 3px rgba(111, 223, 254, 0.2);
+}
+
+.ece-form-input::placeholder { color: #bbb; }
+
+/* --- ECE Detail Box --- */
+.ece-detail-box {
+  padding: 20px;
+  background: #f8f9fb;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+
+/* --- ECE Day Check --- */
+.ece-day-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.ece-day-check .form-check-input:checked {
+  background-color: var(--ece-blue);
+  border-color: var(--ece-blue);
+}
+
+/* --- Room Select Card --- */
+.room-select-card {
+  display: block;
+  text-align: left;
+  padding: 16px;
+  width: 100%;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.room-select-card:hover {
+  border-color: var(--ece-blue);
+  box-shadow: 0 4px 16px rgba(111, 223, 254, 0.12);
+}
+
+.room-check-icon {
+  color: var(--ece-blue);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.btn-check:checked + .room-select-card {
+  border-color: var(--ece-blue);
+  box-shadow: 0 0 0 3px rgba(111, 223, 254, 0.2);
+}
+
+.btn-check:checked + .room-select-card .room-check-icon {
+  opacity: 1;
+}
+
+.btn-check:checked + .room-select-card .h5 {
+  color: var(--font-dark-blue);
+}
+
+/* --- ECE Purpose Buttons --- */
+.ece-purpose-btn {
+  width: 100%;
+  padding: 14px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  font-family: 'Sarabun', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ece-purpose-btn:hover {
+  border-color: var(--ece-blue);
+  color: var(--font-dark-blue);
+}
+
+.ece-purpose-btn.active {
+  background: var(--font-dark-blue);
+  border-color: var(--font-dark-blue);
+  color: #fff;
+}
+
+/* --- ECE Pill Button --- */
+.ece-pill-btn {
+  padding: 6px 20px;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  background: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text);
+}
+
+.btn-check:checked + .ece-pill-btn {
+  background: var(--ece-blue);
+  border-color: var(--ece-blue);
+  color: #fff;
+}
+
+/* --- ECE Primary Button --- */
+.ece-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 24px;
+  background: var(--ece-blue);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Sarabun', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px rgba(111, 223, 254, 0.3);
+  text-decoration: none;
+}
+
+.ece-btn-primary:hover {
+  background: var(--ece-blue-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(111, 223, 254, 0.4);
+  color: #fff;
+}
+
+/* --- ECE Outline Danger Button --- */
+.ece-btn-outline-danger {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 16px;
+  border: 1.5px solid #dc2626;
+  border-radius: 8px;
+  background: transparent;
+  color: #dc2626;
+  font-family: 'Sarabun', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ece-btn-outline-danger:hover {
+  background: rgba(220, 38, 38, 0.06);
+}
+
+/* --- ECE Alert Conflict --- */
+.ece-alert-conflict {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 22px;
+  background: rgba(220, 38, 38, 0.06);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-left: 4px solid #dc2626;
+  border-radius: 14px;
+  color: #991b1b;
+}
+
+.ece-alert-conflict i { margin-top: 2px; }
+
+/* --- ECE Tab Bar --- */
+.ece-tab-bar {
+  display: flex;
+  background: #fff;
+  padding: 4px;
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.ece-tab {
+  padding: 8px 22px;
+  border: none;
+  border-radius: 20px;
+  background: transparent;
+  font-family: 'Sarabun', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ece-tab:hover { color: var(--font-dark-blue); }
+
+.ece-tab.active {
+  background: var(--ece-blue);
+  color: #fff;
+}
+
+/* --- ECE Badges --- */
+.ece-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.ece-badge.approved { background-color: var(--success); color: #fff; }
+.ece-badge.pending { background-color: var(--warning); color: #000; }
+.ece-badge.cancelled { background-color: var(--cancelled); color: #fff; }
+
+/* --- ECE Icon Box --- */
+.ece-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.ece-icon-box.blue { background: rgba(111, 223, 254, 0.15); color: #0891b2; }
+.ece-icon-box.yellow { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.ece-icon-box.grey { background: rgba(156, 163, 175, 0.15); color: #6b7280; }
+
+/* --- ECE Pagination --- */
+.ece-page-active {
+  background-color: var(--ece-blue) !important;
+  border-color: var(--ece-blue) !important;
+}
+
+
+/* =========================================
    LEGACY SIDEBAR LAYOUT (Other pages)
    ========================================= */
 
@@ -847,5 +1233,31 @@ body {
 
   .login-logo-area img {
     height: 50px;
+  }
+
+  .page-header {
+    min-height: 180px;
+  }
+
+  .page-header-title {
+    font-size: 1.5rem;
+  }
+
+  .page-content {
+    padding: 0 20px 40px;
+  }
+
+  .ece-tab-bar {
+    flex-wrap: wrap;
+    border-radius: 14px;
+  }
+
+  .ece-tab {
+    font-size: 0.78rem;
+    padding: 6px 14px;
+  }
+
+  .ece-card-body {
+    padding: 16px 20px;
   }
 }

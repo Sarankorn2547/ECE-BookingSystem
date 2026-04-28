@@ -57,7 +57,7 @@
 
     <!-- Quick Action Cards -->
     <div class="home-actions">
-        <a href="#" class="home-action-card">
+        <a href="{% url 'booking:booking_form' %}" class="home-action-card">
             <div class="home-action-icon red">
                 <i class="fa-solid fa-calendar-plus"></i>
             </div>
@@ -67,7 +67,7 @@
             </div>
             <i class="fa-solid fa-chevron-right home-action-arrow"></i>
         </a>
-        <a href="#" class="home-action-card">
+        <a href="{% url 'booking:my_bookings' %}" class="home-action-card">
             <div class="home-action-icon yellow">
                 <i class="fa-solid fa-list-check"></i>
             </div>
@@ -77,7 +77,7 @@
             </div>
             <i class="fa-solid fa-chevron-right home-action-arrow"></i>
         </a>
-        <a href="#" class="home-action-card">
+        <a href="{% url 'booking:calendar' %}" class="home-action-card">
             <div class="home-action-icon blue">
                 <i class="fa-solid fa-calendar-days"></i>
             </div>
@@ -94,7 +94,7 @@
         <div class="home-recent-card">
             <div class="home-recent-header">
                 <h5><i class="fa-solid fa-clock-rotate-left"></i> รายการจองล่าสุด</h5>
-                <a href="#" class="btn-view-all">ดูทั้งหมด</a>
+                <a href="{% url 'booking:my_bookings' %}" class="btn-view-all">ดูทั้งหมด</a>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
