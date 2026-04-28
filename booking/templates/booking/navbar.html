@@ -1,0 +1,13 @@
+<!-- Top Navbar (reusable partial) -->
+<nav class="home-navbar">
+    <a href="{% url 'booking:dashboard' %}" class="navbar-brand">
+        <img src="https://ece.engr.tu.ac.th/assets/img/logo/ECE-department-logo.svg" alt="ECE Logo">
+    </a>
+    <ul class="navbar-nav">
+        <li><a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" href="{% url 'booking:dashboard' %}">หน้าหลัก</a></li>
+        <li><a class="nav-link {% if active_page == 'booking' %}active{% endif %}" href="#">จองห้อง</a></li>
+        <li><a class="nav-link {% if active_page == 'calendar' %}active{% endif %}" href="#">ปฏิทินการจอง</a></li>
+        <li><a class="nav-link {% if active_page == 'my_bookings' %}active{% endif %}" href="#">การจองของฉัน</a></li>
+        <li><a class="nav-link logout-link" href="{% url 'booking:logout' %}">ออกจากระบบ</a></li>
+    </ul>
+</nav>

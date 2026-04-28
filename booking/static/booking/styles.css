@@ -1,17 +1,27 @@
-/* TU Design Tokens & Base Styles */
+/* ECE Design Tokens & Base Styles */
 :root {
+  /* New Figma color theme */
+  --ece-blue: #6FDFFE;
+  --ece-blue-dark: #4dbcd4;
+  --ece-blue-light: rgba(111, 223, 254, 0.15);
+  --font-dark-blue: #4A2D8C;
+  --font-grey: #D9D9D9;
+
+  /* Legacy TU colors (kept for other pages) */
   --tu-red: #8c181c;
   --tu-red-dark: #6b1115;
   --tu-gold: #ffcf50;
   --tu-gold-dark: #e6b800;
-  --bg: #f8f5f0;
+
+  /* Surfaces */
+  --bg: #f5f7fa;
   --surface: #ffffff;
-  --text: #1a1714;
-  --text-muted: #6b6560;
-  --border: #e4dfd6;
+  --text: #2d2d2d;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
   --success: #15803d;
-  --danger: #8c181c;
-  --warning: #ffcf50;
+  --danger: #dc2626;
+  --warning: #f59e0b;
   --cancelled: #9ca3af;
 
   --sidebar-width: 260px;
@@ -21,7 +31,611 @@ body {
   font-family: 'Sarabun', 'Noto Sans Thai', sans-serif;
   background-color: var(--bg);
   color: var(--text);
+  margin: 0;
+  padding: 0;
 }
+
+/* =========================================
+   HOME / DASHBOARD PAGE (Figma Design)
+   ========================================= */
+
+/* --- Top Navbar --- */
+.home-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 40px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+}
+
+.home-navbar .navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+}
+
+.home-navbar .navbar-brand img {
+  height: 44px;
+  width: auto;
+}
+
+.home-navbar .navbar-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.home-navbar .navbar-brand-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--font-dark-blue);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.home-navbar .navbar-brand-subtitle {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.home-navbar .navbar-nav {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.home-navbar .nav-link {
+  color: var(--font-dark-blue);
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 8px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+  white-space: nowrap;
+}
+
+.home-navbar .nav-link:hover {
+  background-color: var(--ece-blue-light);
+  color: var(--font-dark-blue);
+}
+
+.home-navbar .nav-link.active {
+  background-color: var(--ece-blue);
+  color: #fff;
+  font-weight: 600;
+}
+
+.home-navbar .nav-link.logout-link {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.home-navbar .nav-link.logout-link:hover {
+  background-color: rgba(220, 38, 38, 0.08);
+}
+
+/* --- Hero Section --- */
+.home-hero {
+  position: relative;
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  padding-top: 80px;
+}
+
+.home-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('https://engr.tu.ac.th/uploads/images_virtual_bg/2021.7.12_210712_7_.jpg');
+  background-size: cover;
+  background-position: center 35%;
+  z-index: 0;
+}
+
+.home-hero-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+      rgba(255, 255, 255, 0.35) 0%,
+      rgba(255, 255, 255, 0.55) 40%,
+      rgba(245, 247, 250, 0.85) 85%,
+      rgba(245, 247, 250, 1) 100%);
+}
+
+.home-hero-content {
+  position: relative;
+  z-index: 1;
+  padding: 40px 20px 30px;
+}
+
+.home-hero-greeting {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--font-dark-blue);
+  margin-bottom: 4px;
+  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.6);
+}
+
+.home-hero-title {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--ece-blue);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 12px rgba(111, 223, 254, 0.3);
+}
+
+.home-hero-dept {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--font-dark-blue);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+/* --- Action Cards --- */
+.home-actions {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  padding: 0 40px;
+  margin-top: -20px;
+  position: relative;
+  z-index: 2;
+  flex-wrap: wrap;
+}
+
+.home-action-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 28px;
+  min-width: 280px;
+  max-width: 340px;
+  flex: 1;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+}
+
+.home-action-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(111, 223, 254, 0.05), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.home-action-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--ece-blue);
+  box-shadow: 0 12px 28px rgba(111, 223, 254, 0.15);
+  text-decoration: none;
+  color: var(--text);
+}
+
+.home-action-card:hover::before {
+  opacity: 1;
+}
+
+.home-action-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.3rem;
+}
+
+.home-action-icon.red {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+.home-action-icon.yellow {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.home-action-icon.blue {
+  background-color: rgba(111, 223, 254, 0.15);
+  color: #0891b2;
+}
+
+.home-action-text h5 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 2px;
+  color: var(--font-dark-blue);
+}
+
+.home-action-text p {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.home-action-arrow {
+  margin-left: auto;
+  color: var(--text-muted);
+  opacity: 0.4;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.home-action-card:hover .home-action-arrow {
+  opacity: 1;
+  color: var(--ece-blue);
+  transform: translateX(4px);
+}
+
+/* --- Recent Bookings Section --- */
+.home-recent {
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 0 40px;
+}
+
+.home-recent-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.home-recent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.home-recent-header h5 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--font-dark-blue);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.home-recent-header h5 i {
+  color: var(--ece-blue);
+}
+
+.btn-view-all {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 18px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.btn-view-all:hover {
+  border-color: var(--ece-blue);
+  color: var(--font-dark-blue);
+  background: var(--ece-blue-light);
+}
+
+/* --- Toast Notifications (auto-dismiss) --- */
+.home-toast-container {
+  position: fixed;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: toastSlideIn 0.4s ease-out;
+}
+
+.home-toast-container.home-toast-hide {
+  animation: toastFadeOut 0.5s ease-in forwards;
+}
+
+.home-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--font-dark-blue);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  white-space: nowrap;
+}
+
+.home-toast i {
+  font-size: 1.1rem;
+}
+
+.home-toast-success {
+  background: #15803d;
+}
+
+.home-toast-danger,
+.home-toast-error {
+  background: #dc2626;
+}
+
+.home-toast-info {
+  background: var(--font-dark-blue);
+}
+
+.home-toast-warning {
+  background: #d97706;
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes toastFadeOut {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+}
+
+/* =========================================
+   LOGIN PAGE (Figma Design)
+   ========================================= */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-bg-image {
+  position: absolute;
+  inset: 0;
+  background-image: url('https://engr.tu.ac.th/uploads/images_virtual_bg/2021.7.12_210712_7_.jpg');
+  background-size: cover;
+  background-position: center 35%;
+  z-index: 0;
+}
+
+.login-bg-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+      rgba(255, 255, 255, 0.2) 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(245, 247, 250, 0.7) 100%);
+}
+
+.login-logo-area {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.login-logo-area img {
+  height: 70px;
+  width: auto;
+}
+
+.login-logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.login-logo-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--font-dark-blue);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 4px rgba(255, 255, 255, 0.8);
+}
+
+.login-logo-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 4px rgba(255, 255, 255, 0.8);
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 460px;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 20px;
+  padding: 44px 40px 36px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.login-card-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--font-dark-blue);
+  margin-bottom: 6px;
+}
+
+.login-card-subtitle {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--font-dark-blue);
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+
+.login-card-faculty {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+}
+
+.login-form-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.login-form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid var(--font-grey);
+  border-radius: 10px;
+  font-family: 'Sarabun', sans-serif;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  outline: none;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.login-form-input:focus {
+  border-color: var(--ece-blue);
+  box-shadow: 0 0 0 3px rgba(111, 223, 254, 0.2);
+}
+
+.login-form-input::placeholder {
+  color: #bbb;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--ece-blue);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Sarabun', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px rgba(111, 223, 254, 0.3);
+}
+
+.login-btn:hover {
+  background: var(--ece-blue-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(111, 223, 254, 0.4);
+}
+
+.login-btn:active {
+  transform: translateY(0);
+}
+
+.login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.login-footer i {
+  font-size: 1.1rem;
+  color: var(--ece-blue);
+}
+
+/* Login alert animation */
+.login-alert-slide {
+  animation: alertSlideDown 0.3s ease-out;
+}
+
+@keyframes alertSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================
+   LEGACY SIDEBAR LAYOUT (Other pages)
+   ========================================= */
 
 /* Sidebar Styling */
 .sidebar {
@@ -151,4 +765,87 @@ body {
 .fc-event {
   border: none !important;
   padding: 2px 4px;
+}
+
+/* =========================================
+   TABLE STYLES (Shared)
+   ========================================= */
+.table thead th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+  border-bottom-width: 1px;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.table-empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-muted);
+}
+
+.table-empty-state i {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 12px;
+  opacity: 0.25;
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+@media (max-width: 768px) {
+  .home-navbar {
+    padding: 12px 20px;
+  }
+
+  .home-navbar .navbar-nav {
+    gap: 4px;
+  }
+
+  .home-navbar .nav-link {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+  }
+
+  .home-hero {
+    min-height: 340px;
+  }
+
+  .home-hero-greeting {
+    font-size: 1.8rem;
+  }
+
+  .home-hero-title {
+    font-size: 2rem;
+    letter-spacing: 2px;
+  }
+
+  .home-actions {
+    padding: 0 20px;
+    gap: 12px;
+  }
+
+  .home-action-card {
+    min-width: unset;
+  }
+
+  .home-recent {
+    padding: 0 20px;
+  }
+
+  .login-card {
+    margin: 0 16px;
+    padding: 32px 24px 28px;
+  }
+
+  .login-logo-area img {
+    height: 50px;
+  }
 }

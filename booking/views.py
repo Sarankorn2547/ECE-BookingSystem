@@ -127,5 +127,6 @@ def dashboard_view(request):
         "department": tu_profile.get("department", ""),
         "faculty": tu_profile.get("faculty", ""),
         "tu_status": tu_profile.get("tu_status", ""),
+        "active_page": "dashboard",
     }
     return render(request, "booking/dashboard.html", context)
