@@ -129,3 +129,173 @@ def dashboard_view(request):
         "tu_status": tu_profile.get("tu_status", ""),
     }
     return render(request, "booking/dashboard.html", context)
+
+
+# ---------------------------------------------------------------------------
+# Accounts
+# ---------------------------------------------------------------------------
+
+@login_required
+def profile_view(request):
+    tu_profile = request.session.get("tu_profile", {})
+    return render(request, "booking/profile.html", {"tu_profile": tu_profile})
+
+
+@login_required
+def user_list_view(request):
+    # TODO: admin only — list users + roles
+    return render(request, "booking/admin-users.html")
+
+
+@login_required
+def set_user_role_view(request, pk):
+    # TODO: POST only — update UserProfile.role
+    return redirect("booking:user-list")
+
+
+# ---------------------------------------------------------------------------
+# Rooms
+# ---------------------------------------------------------------------------
+
+@login_required
+def room_list_view(request):
+    # TODO: admin only
+    return render(request, "booking/room-list.html")
+
+
+@login_required
+def room_add_view(request):
+    return render(request, "booking/room-form.html")
+
+
+@login_required
+def room_edit_view(request, pk):
+    return render(request, "booking/room-form.html")
+
+
+@login_required
+def blackout_view(request):
+    return render(request, "booking/blackout.html")
+
+
+# ---------------------------------------------------------------------------
+# Bookings
+# ---------------------------------------------------------------------------
+
+@login_required
+def booking_list_view(request):
+    return render(request, "booking/my-bookings.html")
+
+
+@login_required
+def booking_create_view(request):
+    return render(request, "booking/booking-form.html")
+
+
+@login_required
+def booking_detail_view(request, pk):
+    return render(request, "booking/booking-detail.html")
+
+
+@login_required
+def booking_cancel_view(request, pk):
+    # TODO: POST only — cancel if before start_date
+    return redirect("booking:booking-list")
+
+
+@login_required
+def recurring_booking_view(request):
+    return render(request, "booking/booking-recurring.html")
+
+
+# ---------------------------------------------------------------------------
+# Approvals
+# ---------------------------------------------------------------------------
+
+@login_required
+def approval_queue_view(request):
+    return render(request, "booking/admin-approvals.html")
+
+
+@login_required
+def approve_view(request, pk):
+    # TODO: POST only — approve + email notify
+    return redirect("booking:approval-queue")
+
+
+@login_required
+def reject_view(request, pk):
+    # TODO: POST only — reject with reason + email notify
+    return redirect("booking:approval-queue")
+
+
+# ---------------------------------------------------------------------------
+# Calendar
+# ---------------------------------------------------------------------------
+
+@login_required
+def calendar_view(request):
+    return render(request, "booking/calendar.html")
+
+
+@login_required
+def calendar_monthly_view(request):
+    return render(request, "booking/calendar.html", {"view_mode": "monthly"})
+
+
+# ---------------------------------------------------------------------------
+# Reports
+# ---------------------------------------------------------------------------
+
+@login_required
+def reports_view(request):
+    return render(request, "booking/admin-reports.html")
+
+
+@login_required
+def utilization_view(request):
+    return render(request, "booking/admin-reports.html", {"report_type": "utilization"})
+
+
+@login_required
+def export_csv_view(request):
+    # TODO: stream CSV response
+    from django.http import HttpResponse
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="bookings.csv"'
+    return response
+
+
+# ---------------------------------------------------------------------------
+# Teams Bot NLP API
+# ---------------------------------------------------------------------------
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+import re as _re
+
+@csrf_exempt
+@require_POST
+def nlp_parse_view(request):
+    """Teams Bot outgoing webhook endpoint — proxied from room_booking_nlp."""
+    import json as _json
+    try:
+        data = _json.loads(request.body)
+    except Exception:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    text = data.get("text", "")
+    from_data = data.get("from", {})
+    username = from_data.get("name", "Unknown User")
+
+    clean_text = _re.sub(r"<at>.*?</at>", "", text)
+    clean_text = _re.sub(r"RoomBot", "", clean_text, flags=_re.IGNORECASE)
+    clean_text = _re.sub(r"<[^>]+>", "", clean_text)
+    clean_text = clean_text.replace("&nbsp;", " ").strip()
+
+    if not clean_text:
+        return JsonResponse({"error": "No text"}, status=400)
+
+    # TODO: wire up NLP service and booking logic (ported from room_booking_nlp)
+    return JsonResponse({"type": "message", "text": f"🚧 NLP endpoint พร้อมแล้ว (ยังไม่ได้ต่อ logic): {clean_text}"})
