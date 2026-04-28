@@ -1,15 +1,24 @@
 services:
   db:
     image: postgres:16-alpine
+    container_name: ece-db
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     expose:
       - 5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ece-network
     labels:
       - "com.ece.allow_logs=true"
 
   web:
     build: .
+    container_name: ece-web
     command: gunicorn ece_booking.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - static_volume:/app/static
@@ -18,26 +27,32 @@ services:
       - SQL_HOST=db
       - SQL_PORT=5432
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    networks:
+      - ece-network
     labels:
       - "com.ece.allow_logs=true"
 
   nginx:
     image: nginx:1.25-alpine
+    container_name: ece-nginx
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
       - static_volume:/app/static
       - media_volume:/app/media
     ports:
-      - 8081:80 # เปลี่ยนจาก 80 เป็น 8081 เพื่อไม่ให้ซ้ำกับโปรเจกต์อื่น
+      - 8081:80
     depends_on:
       - web
+    networks:
+      - ece-network
     labels:
       - "com.ece.allow_logs=true"
 
-  # --- Dozzle Log Viewer (Port 8888) ---
   dozzle:
     image: amir20/dozzle:latest
+    container_name: ece-dozzle
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -45,6 +60,12 @@ services:
       - DOZZLE_FILTER=label=com.ece.allow_logs=true
     ports:
       - 8888:8080
+    networks:
+      - ece-network
+
+networks:
+  ece-network:
+    driver: bridge
 
 volumes:
   postgres_data:
