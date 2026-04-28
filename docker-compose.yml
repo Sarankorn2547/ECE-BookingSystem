@@ -3,8 +3,7 @@ services:
     image: postgres:16-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-    env_file:
-      - .env
+    # ลบ env_file ออก แล้วใช้ Environment Variables จาก Portainer UI แทน
     expose:
       - 5432
     labels:
@@ -16,8 +15,6 @@ services:
     volumes:
       - static_volume:/app/static
       - media_volume:/app/media
-    env_file:
-      - .env
     depends_on:
       - db
     labels:
@@ -45,7 +42,7 @@ services:
     environment:
       - DOZZLE_FILTER=label=com.ece.allow_logs=true
     ports:
-      - 8888:8080 # เปลี่ยนมาใช้ 8888 แทน เพื่อไม่ให้ซ้ำ
+      - 8888:8080
 
 volumes:
   postgres_data:
