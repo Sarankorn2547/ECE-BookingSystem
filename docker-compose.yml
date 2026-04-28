@@ -17,7 +17,7 @@ services:
     labels:
       - "com.ece.allow_logs=true"
 
-  web:
+  ece-web:
     build: .
     container_name: ece-web
     command: gunicorn ece_booking.wsgi:application --bind 0.0.0.0:8000
@@ -27,6 +27,7 @@ services:
     env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=ece_booking.settings
+      - TZ=Asia/Bangkok
     depends_on:
       db:
         condition: service_healthy
@@ -45,7 +46,7 @@ services:
     ports:
       - 8081:80
     depends_on:
-      - web
+      - ece-web
     networks:
       - ece-network
     labels:
@@ -58,6 +59,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
+      - TZ=Asia/Bangkok
       - DOZZLE_FILTER=label=com.ece.allow_logs=true
     ports:
       - 8888:8080
