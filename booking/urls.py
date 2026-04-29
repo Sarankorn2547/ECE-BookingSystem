@@ -12,4 +12,3 @@ urlpatterns = [
     path("my-bookings/", views.my_bookings_view, name="my_bookings"),
     path("calendar/", views.calendar_view, name="calendar"),
 ]
-
