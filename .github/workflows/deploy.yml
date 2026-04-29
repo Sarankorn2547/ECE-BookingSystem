@@ -17,23 +17,23 @@ jobs:
           port: 8822
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # ไปยังโฟลเดอร์โปรเจกต์บน VPS (ถ้ายังไม่มีจะทำการ Clone)
             PROJECT_DIR="/root/ECE-BookingSystem"
-            
+
             if [ ! -d "$PROJECT_DIR" ]; then
               git clone -b deploy https://github.com/Sarankorn2547/ECE-BookingSystem.git "$PROJECT_DIR"
             fi
-            
+
             cd "$PROJECT_DIR"
-            
-            # ดึงโค้ดล่าสุด
+
+            # บังคับใช้ไฟล์จาก Git (ป้องกัน conflict จากการแก้ไขบน VPS โดยตรง)
+            git checkout -- .
             git pull origin deploy
-            
-            # รันระบบใหม่ (Build และ Up คอนเทนเนอร์)
-            docker compose up -d --build
-            
-            # รัน Migration และ Collect static โดยใช้ run --rm เพื่อให้มันรอจนกว่าเน็ตเวิร์กจะพร้อม
-            docker compose run --rm web python manage.py migrate
-            docker compose run --rm web python manage.py collectstatic --noinput
-            
+
+            # รันระบบใหม่ พร้อมล้าง orphan containers
+            docker compose up -d --build --remove-orphans
+
+            # รัน Migration และ Collect Static
+            docker compose exec -T ece-web python manage.py migrate
+            docker compose exec -T ece-web python manage.py collectstatic --noinput
+
             echo "✅ Deployment Successful!"
