@@ -33,7 +33,7 @@ Based on [SRS Document v1.0](https://wachira.ece.engr.tu.ac.th/share/webapp/SRS_
 | Status | Use Case | Description |
 | :----: | -------- | ----------- |
 | ✅ Done | **UC-01: Login** | เข้าสู่ระบบผ่าน TU REST API |
-| 🔲 Template Only | **UC-02: จองห้อง** | ฟอร์มจองห้อง (มี template แล้ว ยังไม่มี backend) |
+| ✅ Done | **UC-02: จองห้อง** | ฟอร์มจองห้องพร้อม backend |
 | 🔲 Template Only | **UC-03: อนุมัติ/ปฏิเสธการจอง** | หน้าอนุมัติ (มี template แล้ว ยังไม่มี backend) |
 | 🔲 Template Only | **UC-04: ดูปฏิทินห้องว่าง** | ปฏิทินห้อง (มี template แล้ว ยังไม่มี backend) |
 | 🔲 Template Only | **UC-05: ดูรายงานสถิติ** | รายงานการใช้ห้อง (มี template แล้ว ยังไม่มี backend) |
@@ -61,15 +61,15 @@ Based on [SRS Document v1.0](https://wachira.ece.engr.tu.ac.th/share/webapp/SRS_
 - [x] Quick action cards (จองห้อง, การจองของฉัน, ปฏิทินห้อง)
 - [x] Recent bookings table (empty state)
 
-#### 🔲 Module 3 — Booking Form (Template Only)
+#### ✅ Module 3 — Booking Form (Done)
 
 - [x] Template: `booking-form.html`
-- [ ] Django view and URL route
-- [ ] Room model (5 rooms)
-- [ ] Booking model (room, user, date, time, purpose, status)
-- [ ] Time slot conflict detection
-- [ ] Form validation
-- [ ] Save booking with Pending status
+- [x] Django view and URL route
+- [x] Room model (5 rooms)
+- [x] Booking model (room, user, date, time, purpose, status)
+- [x] Time slot conflict detection
+- [x] Form validation
+- [x] Save booking with Pending status
 
 #### 🔲 Module 4 — My Bookings (Template Only)
 
