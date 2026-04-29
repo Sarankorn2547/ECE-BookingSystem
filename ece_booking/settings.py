@@ -90,9 +90,9 @@ TU_REST_API_KEY = os.getenv("TU_REST_API", "")
 SESSION_COOKIE_AGE = 8 * 60 * 60  # 8 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
-LOGIN_URL = "/login/"
+LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/dashboard/"
-LOGOUT_REDIRECT_URL = "/login/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 MESSAGE_TAGS = {
     messages.DEBUG: "secondary",
