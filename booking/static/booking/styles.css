@@ -200,14 +200,16 @@ body {
 
 /* --- Action Cards --- */
 .home-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 24px;
-  justify-content: center;
   padding: 0 40px;
   margin-top: -20px;
   position: relative;
   z-index: 2;
-  flex-wrap: wrap;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .home-action-card {
@@ -750,9 +752,20 @@ body {
   flex-shrink: 0;
 }
 
-.step-badge.red { background-color: rgba(220, 38, 38, 0.15); color: #dc2626; }
-.step-badge.yellow { background-color: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-.step-badge.blue { background-color: rgba(111, 223, 254, 0.2); color: #0891b2; }
+.step-badge.red {
+  background-color: rgba(220, 38, 38, 0.15);
+  color: #dc2626;
+}
+
+.step-badge.yellow {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.step-badge.blue {
+  background-color: rgba(111, 223, 254, 0.2);
+  color: #0891b2;
+}
 
 /* --- ECE Form Inputs --- */
 .ece-form-label {
@@ -781,7 +794,9 @@ body {
   box-shadow: 0 0 0 3px rgba(111, 223, 254, 0.2);
 }
 
-.ece-form-input::placeholder { color: #bbb; }
+.ece-form-input::placeholder {
+  color: #bbb;
+}
 
 /* --- ECE Detail Box --- */
 .ece-detail-box {
@@ -805,6 +820,13 @@ body {
 .ece-day-check .form-check-input:checked {
   background-color: var(--ece-blue);
   border-color: var(--ece-blue);
+}
+
+/* --- ECE Room Grid --- */
+.ece-room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
 }
 
 /* --- Room Select Card --- */
@@ -831,16 +853,16 @@ body {
   transition: opacity 0.2s ease;
 }
 
-.btn-check:checked + .room-select-card {
+.btn-check:checked+.room-select-card {
   border-color: var(--ece-blue);
   box-shadow: 0 0 0 3px rgba(111, 223, 254, 0.2);
 }
 
-.btn-check:checked + .room-select-card .room-check-icon {
+.btn-check:checked+.room-select-card .room-check-icon {
   opacity: 1;
 }
 
-.btn-check:checked + .room-select-card .h5 {
+.btn-check:checked+.room-select-card .h5 {
   color: var(--font-dark-blue);
 }
 
@@ -886,7 +908,7 @@ body {
   color: var(--text);
 }
 
-.btn-check:checked + .ece-pill-btn {
+.btn-check:checked+.ece-pill-btn {
   background: var(--ece-blue);
   border-color: var(--ece-blue);
   color: #fff;
@@ -950,7 +972,9 @@ body {
   color: #991b1b;
 }
 
-.ece-alert-conflict i { margin-top: 2px; }
+.ece-alert-conflict i {
+  margin-top: 2px;
+}
 
 /* --- ECE Tab Bar --- */
 .ece-tab-bar {
@@ -975,7 +999,9 @@ body {
   transition: all 0.2s ease;
 }
 
-.ece-tab:hover { color: var(--font-dark-blue); }
+.ece-tab:hover {
+  color: var(--font-dark-blue);
+}
 
 .ece-tab.active {
   background: var(--ece-blue);
@@ -992,9 +1018,20 @@ body {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
-.ece-badge.approved { background-color: var(--success); color: #fff; }
-.ece-badge.pending { background-color: var(--warning); color: #000; }
-.ece-badge.cancelled { background-color: var(--cancelled); color: #fff; }
+.ece-badge.approved {
+  background-color: var(--success);
+  color: #fff;
+}
+
+.ece-badge.pending {
+  background-color: var(--warning);
+  color: #000;
+}
+
+.ece-badge.cancelled {
+  background-color: var(--cancelled);
+  color: #fff;
+}
 
 /* --- ECE Icon Box --- */
 .ece-icon-box {
@@ -1008,9 +1045,20 @@ body {
   font-size: 0.9rem;
 }
 
-.ece-icon-box.blue { background: rgba(111, 223, 254, 0.15); color: #0891b2; }
-.ece-icon-box.yellow { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-.ece-icon-box.grey { background: rgba(156, 163, 175, 0.15); color: #6b7280; }
+.ece-icon-box.blue {
+  background: rgba(111, 223, 254, 0.15);
+  color: #0891b2;
+}
+
+.ece-icon-box.yellow {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.ece-icon-box.grey {
+  background: rgba(156, 163, 175, 0.15);
+  color: #6b7280;
+}
 
 /* --- ECE Pagination --- */
 .ece-page-active {
