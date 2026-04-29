@@ -32,8 +32,8 @@ jobs:
             # รันระบบใหม่ พร้อมล้าง orphan containers
             docker compose up -d --build --remove-orphans
 
-            # รัน Migration และ Collect Static
-            docker compose exec -T ece-web python manage.py migrate
+            # รัน Migration (--fake-initial เพื่อป้องกัน UniqueViolation เมื่อตารางมีอยู่แล้ว)
+            docker compose exec -T ece-web python manage.py migrate --fake-initial
             docker compose exec -T ece-web python manage.py collectstatic --noinput
 
             echo "✅ Deployment Successful!"
