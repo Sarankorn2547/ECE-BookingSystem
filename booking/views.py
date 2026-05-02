@@ -190,7 +190,7 @@ def booking_form_view(request):
             conflicts = Booking.objects.filter(
                 room=room,
                 start_date=start_date,
-                status__in=[Booking.BookingStatus.PENDING, Booking.BookingStatus.APPROVED]
+                status__in=[Booking.Status.PENDING, Booking.Status.APPROVED]
             ).filter(conflict_filter)
 
             if conflicts.exists():
@@ -224,7 +224,7 @@ def booking_form_view(request):
                 recurring_pattern=recurring_pattern,
                 days_of_week=days_of_week or None,
                 notes=notes,
-                status=Booking.BookingStatus.PENDING,
+                status=Booking.Status.PENDING,
             )
 
             messages.success(request, "ส่งคำขอจองเรียบร้อยแล้ว กรุณารอการอนุมัติ")
@@ -252,14 +252,70 @@ def booking_form_view(request):
 
 @login_required
 def my_bookings_view(request):
-    """My bookings page — requires login."""
+    """My bookings page — lists user's bookings with optional status/search filters."""
+    from .models import Booking
+    from django.db.models import Q
+
+    booker_id = request.session.get("tu_profile", {}).get("username", request.user.username)
+    status_filter = request.GET.get("status", "")
+    search_query = request.GET.get("q", "").strip()
+
+    bookings = Booking.objects.filter(booker_id=booker_id).exclude(status=Booking.Status.CANCELLED).select_related("room")
+
+    valid_statuses = [s.value for s in Booking.Status]
+    if status_filter in valid_statuses:
+        bookings = bookings.filter(status=status_filter)
+
+    if search_query:
+        bookings = bookings.filter(
+            Q(room__code__icontains=search_query) |
+            Q(course_code__icontains=search_query) |
+            Q(course_name__icontains=search_query) |
+            Q(training_title__icontains=search_query)
+        )
+
+    bookings = bookings.order_by("-created_at")
+
     tu_profile = request.session.get("tu_profile", {})
     context = {
         "tu_profile": tu_profile,
         "display_name": tu_profile.get("display_name_th") or tu_profile.get("display_name_en") or request.user.username,
         "active_page": "my_bookings",
+        "bookings": bookings,
+        "status_filter": status_filter,
+        "search_query": search_query,
     }
     return render(request, "booking/my-bookings.html", context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def cancel_booking_view(request, booking_id):
+    """Cancel a booking — only allowed for PENDING or APPROVED bookings owned by the user."""
+    from .models import Booking, BookingLog
+
+    booker_id = request.session.get("tu_profile", {}).get("username", request.user.username)
+    try:
+        booking = Booking.objects.get(id=booking_id, booker_id=booker_id)
+    except Booking.DoesNotExist:
+        messages.error(request, "ไม่พบรายการจองนี้")
+        return redirect("booking:my_bookings")
+
+    if booking.status not in [Booking.Status.PENDING, Booking.Status.APPROVED]:
+        messages.error(request, "ไม่สามารถยกเลิกการจองที่มีสถานะนี้ได้")
+        return redirect("booking:my_bookings")
+
+    booking.status = Booking.Status.CANCELLED
+    booking.save()
+
+    BookingLog.objects.create(
+        booking=booking,
+        action="CANCELLED",
+        actor=booker_id,
+    )
+
+    messages.success(request, "ยกเลิกการจองเรียบร้อยแล้ว")
+    return redirect("booking:my_bookings")
 
 
 @login_required
