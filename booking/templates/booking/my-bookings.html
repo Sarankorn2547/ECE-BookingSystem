@@ -39,15 +39,16 @@
     <div class="page-content">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
             <div class="ece-tab-bar">
-                <button class="ece-tab active">ทั้งหมด</button>
-                <button class="ece-tab">รออนุมัติ</button>
-                <button class="ece-tab">อนุมัติแล้ว</button>
-                <button class="ece-tab">ถูกปฏิเสธ</button>
+                <a href="?{% if search_query %}q={{ search_query }}&{% endif %}" class="ece-tab {% if not status_filter %}active{% endif %}">ทั้งหมด</a>
+                <a href="?status=PENDING{% if search_query %}&q={{ search_query }}{% endif %}" class="ece-tab {% if status_filter == 'PENDING' %}active{% endif %}">รออนุมัติ</a>
+                <a href="?status=APPROVED{% if search_query %}&q={{ search_query }}{% endif %}" class="ece-tab {% if status_filter == 'APPROVED' %}active{% endif %}">อนุมัติแล้ว</a>
+                <a href="?status=REJECTED{% if search_query %}&q={{ search_query }}{% endif %}" class="ece-tab {% if status_filter == 'REJECTED' %}active{% endif %}">ถูกปฏิเสธ</a>
             </div>
-            <div class="position-relative">
+            <form method="get" action="" class="position-relative">
+                {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
                 <i class="fa-solid fa-magnifying-glass position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                <input type="text" class="ece-form-input ps-5" placeholder="ค้นหาการจอง..." style="width: 260px;">
-            </div>
+                <input type="text" name="q" value="{{ search_query }}" class="ece-form-input ps-5" placeholder="ค้นหาการจอง..." style="width: 260px;">
+            </form>
         </div>
 
         <div class="home-recent-card">
@@ -63,93 +64,73 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
+                        {% for booking in bookings %}
+                        <tr {% if booking.status == 'REJECTED' or booking.status == 'CANCELLED' %}class="opacity-75"{% endif %}>
                             <td class="px-4">
                                 <div class="d-flex align-items-center gap-2">
+                                    {% if booking.purpose_type == 'COURSE' %}
                                     <div class="ece-icon-box blue"><i class="fa-solid fa-graduation-cap"></i></div>
-                                    <div>
-                                        <p class="mb-0 fw-bold">สอบกลางภาควิชา CN341</p>
-                                        <p class="mb-0 text-muted small">ID: BK-2026-001</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="fw-bold">406-3</span></td>
-                            <td>
-                                <p class="mb-0 small fw-bold">22 เม.ย. 2026</p>
-                                <p class="mb-0 small text-muted"><i class="fa-regular fa-clock me-1"></i> 09:00 - 12:00</p>
-                            </td>
-                            <td><span class="ece-badge approved">อนุมัติแล้ว</span></td>
-                            <td class="px-4 text-end">
-                                <button class="ece-btn-outline-danger btn-sm"><i class="fa-regular fa-circle-xmark me-1"></i> ยกเลิก</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="px-4">
-                                <div class="d-flex align-items-center gap-2">
+                                    {% else %}
                                     <div class="ece-icon-box yellow"><i class="fa-solid fa-users"></i></div>
+                                    {% endif %}
                                     <div>
-                                        <p class="mb-0 fw-bold">ประชุมภาควิชา</p>
-                                        <p class="mb-0 text-muted small">ID: BK-2026-005</p>
+                                        <p class="mb-0 fw-bold">
+                                            {% if booking.purpose_type == 'COURSE' %}
+                                                {% if booking.course_code %}{{ booking.course_code }}{% endif %}{% if booking.course_code and booking.course_name %} — {% endif %}{% if booking.course_name %}{{ booking.course_name }}{% endif %}
+                                            {% else %}
+                                                {{ booking.training_title }}
+                                            {% endif %}
+                                        </p>
+                                        <p class="mb-0 text-muted small">ID: {{ booking.id|stringformat:"s"|truncatechars:13 }}</p>
                                     </div>
                                 </div>
                             </td>
-                            <td><span class="fw-bold">408-1</span></td>
+                            <td><span class="fw-bold {% if booking.status == 'REJECTED' or booking.status == 'CANCELLED' %}text-muted{% endif %}">{{ booking.room.code }}</span></td>
                             <td>
-                                <p class="mb-0 small fw-bold">24 เม.ย. 2026</p>
-                                <p class="mb-0 small text-muted"><i class="fa-regular fa-clock me-1"></i> 13:30 - 15:30</p>
-                            </td>
-                            <td><span class="ece-badge pending">รออนุมัติ</span></td>
-                            <td class="px-4 text-end">
-                                <button class="ece-btn-outline-danger btn-sm"><i class="fa-regular fa-circle-xmark me-1"></i> ยกเลิก</button>
-                            </td>
-                        </tr>
-                        <tr class="opacity-75">
-                            <td class="px-4">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="ece-icon-box grey"><i class="fa-solid fa-chalkboard-user"></i></div>
-                                    <div>
-                                        <p class="mb-0 fw-bold">จัดติวพิเศษ (SF220)</p>
-                                        <p class="mb-0 text-muted small">ID: BK-2026-008</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="fw-bold text-muted">406-5</span></td>
-                            <td>
-                                <p class="mb-0 small fw-bold">25 เม.ย. 2026</p>
-                                <p class="mb-0 small text-muted"><i class="fa-regular fa-clock me-1"></i> 16:00 - 18:00</p>
+                                <p class="mb-0 small fw-bold">{{ booking.start_date }}</p>
+                                <p class="mb-0 small text-muted"><i class="fa-regular fa-clock me-1"></i> {{ booking.start_time|time:"H:i" }} - {{ booking.end_time|time:"H:i" }}</p>
                             </td>
                             <td>
-                                <span class="ece-badge cancelled">ถูกปฏิเสธ</span>
-                                <i class="fa-solid fa-circle-question ms-1 text-muted" data-bs-toggle="tooltip" title="เหตุผล: ห้องถูกจองโดยเตรียมงานวันเปิดหอพัก"></i>
+                                {% if booking.status == 'PENDING' %}
+                                    <span class="ece-badge pending">รออนุมัติ</span>
+                                {% elif booking.status == 'APPROVED' %}
+                                    <span class="ece-badge approved">อนุมัติแล้ว</span>
+                                {% elif booking.status == 'REJECTED' %}
+                                    <span class="ece-badge cancelled">ถูกปฏิเสธ</span>
+                                {% elif booking.status == 'CANCELLED' %}
+                                    <span class="ece-badge cancelled">ยกเลิกแล้ว</span>
+                                {% endif %}
                             </td>
                             <td class="px-4 text-end">
+                                {% if booking.status == 'PENDING' or booking.status == 'APPROVED' %}
+                                <form method="post" action="{% url 'booking:cancel_booking' booking.id %}" onsubmit="return confirm('ยืนยันการยกเลิกการจองนี้?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="ece-btn-outline-danger btn-sm"><i class="fa-regular fa-circle-xmark me-1"></i> ยกเลิก</button>
+                                </form>
+                                {% else %}
                                 <button class="btn btn-sm btn-light disabled">ไม่สามารถยกเลิกได้</button>
+                                {% endif %}
                             </td>
                         </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>
+                                ไม่พบรายการจอง{% if status_filter or search_query %}ที่ตรงกับเงื่อนไข{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
             <div class="ece-card-footer">
-                <span class="small text-muted">แสดง 1-3 จากทั้งหมด 3 รายการ</span>
-                <nav>
-                    <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item disabled"><a class="page-link" href="#">ก่อนหน้า</a></li>
-                        <li class="page-item active"><a class="page-link ece-page-active" href="#">1</a></li>
-                        <li class="page-item disabled"><a class="page-link" href="#">ถัดไป</a></li>
-                    </ul>
-                </nav>
+                <span class="small text-muted">แสดง {{ bookings|length }} รายการ</span>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.querySelectorAll('.ece-tab').forEach(function (tab) {
-            tab.addEventListener('click', function () {
-                document.querySelectorAll('.ece-tab').forEach(function (t) { t.classList.remove('active'); });
-                this.classList.add('active');
-            });
-        });
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
         document.addEventListener('DOMContentLoaded', function () {
