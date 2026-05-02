@@ -37,7 +37,7 @@ Based on [SRS Document v1.0](https://wachira.ece.engr.tu.ac.th/share/webapp/SRS_
 | 🔲 Template Only | **UC-03: อนุมัติ/ปฏิเสธการจอง** | หน้าอนุมัติ (มี template แล้ว ยังไม่มี backend) |
 | 🔲 Template Only | **UC-04: ดูปฏิทินห้องว่าง** | ปฏิทินห้อง (มี template แล้ว ยังไม่มี backend) |
 | 🔲 Template Only | **UC-05: ดูรายงานสถิติ** | รายงานการใช้ห้อง (มี template แล้ว ยังไม่มี backend) |
-| 🔲 Not Started | **UC-06: ยกเลิกการจอง** | ยกเลิกการจอง |
+| ✅ Done | **UC-06: ยกเลิกการจอง** | ยกเลิกการจอง |
 
 ### Module Breakdown
 
@@ -71,12 +71,12 @@ Based on [SRS Document v1.0](https://wachira.ece.engr.tu.ac.th/share/webapp/SRS_
 - [x] Form validation
 - [x] Save booking with Pending status
 
-#### 🔲 Module 4 — My Bookings (Template Only)
+#### ✅ Module 4 — My Bookings (Done)
 
 - [x] Template: `my-bookings.html`
-- [ ] Django view and URL route
-- [ ] List user's bookings with status filters
-- [ ] Cancel booking functionality (UC-06)
+- [x] Django view and URL route
+- [x] List user's bookings with status filters
+- [x] Cancel booking functionality (UC-06)
 
 #### 🔲 Module 5 — Calendar (Template Only)
 
