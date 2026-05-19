@@ -78,13 +78,13 @@ Based on [SRS Document v1.0](https://wachira.ece.engr.tu.ac.th/share/webapp/SRS_
 - [x] List user's bookings with status filters
 - [x] Cancel booking functionality (UC-06)
 
-#### 🔲 Module 5 — Calendar (Template Only)
+#### ✅ Module 5 — Calendar (Done)
 
 - [x] Template: `calendar.html`
-- [ ] Django view and URL route
-- [ ] FullCalendar integration with booking data
-- [ ] Filter by room
-- [ ] Weekly/monthly view
+- [x] Django view and URL route
+- [x] FullCalendar integration with booking data
+- [x] Filter by room
+- [x] Weekly/monthly view
 
 #### 🔲 Module 6 — Admin Approvals (Template Only)
 

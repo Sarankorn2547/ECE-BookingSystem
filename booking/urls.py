@@ -12,4 +12,5 @@ urlpatterns = [
     path("my-bookings/", views.my_bookings_view, name="my_bookings"),
     path("my-bookings/<uuid:booking_id>/cancel/", views.cancel_booking_view, name="cancel_booking"),
     path("calendar/", views.calendar_view, name="calendar"),
+    path("api/calendar-events/", views.calendar_events_api, name="calendar_events"),
 ]
