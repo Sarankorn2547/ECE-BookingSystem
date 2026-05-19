@@ -321,10 +321,86 @@ def cancel_booking_view(request, booking_id):
 @login_required
 def calendar_view(request):
     """Calendar page — requires login."""
+    from .models import Room
     tu_profile = request.session.get("tu_profile", {})
     context = {
         "tu_profile": tu_profile,
         "display_name": tu_profile.get("display_name_th") or tu_profile.get("display_name_en") or request.user.username,
         "active_page": "calendar",
+        "rooms": Room.objects.all().order_by("code"),
     }
     return render(request, "booking/calendar.html", context)
+
+
+@login_required
+def calendar_events_api(request):
+    """JSON API for FullCalendar — returns bookings as calendar events."""
+    from .models import Booking
+    from django.http import JsonResponse
+    from datetime import datetime, date, timedelta
+
+    start_str = request.GET.get("start", "")
+    end_str = request.GET.get("end", "")
+    room_code = request.GET.get("room", "").strip()
+
+    try:
+        range_start = datetime.fromisoformat(start_str[:10]).date() if start_str else date.today()
+        range_end = datetime.fromisoformat(end_str[:10]).date() if end_str else date.today() + timedelta(days=30)
+    except (ValueError, AttributeError):
+        range_start = date.today()
+        range_end = date.today() + timedelta(days=30)
+
+    bookings = Booking.objects.filter(
+        status__in=[Booking.Status.PENDING, Booking.Status.APPROVED],
+        start_date__lte=range_end,
+        end_date__gte=range_start,
+    ).select_related("room")
+
+    if room_code:
+        bookings = bookings.filter(room__code=room_code)
+
+    events = []
+    for booking in bookings:
+        is_approved = booking.status == Booking.Status.APPROVED
+        bg = "#6FDFFE" if is_approved else "#4A2D8C"
+        border = "#4dbcd4" if is_approved else "#4A2D8C"
+        text = "#1a1a2e" if is_approved else "#ffffff"
+
+        if booking.purpose_type == Booking.PurposeType.COURSE:
+            parts = [p for p in [booking.course_code, booking.course_name] if p]
+            label = " ".join(parts) or "การเรียนการสอน"
+        else:
+            label = booking.training_title or "การฝึกอบรม"
+
+        title = f"{label} ({booking.room.code})"
+        start_t = booking.start_time.strftime("%H:%M:%S")
+        end_t = booking.end_time.strftime("%H:%M:%S")
+
+        days_of_week = booking.days_of_week
+        effective_start = max(booking.start_date, range_start)
+        effective_end = min(booking.end_date, range_end)
+
+        if days_of_week:
+            current = effective_start
+            while current <= effective_end:
+                if current.weekday() in days_of_week:
+                    events.append({
+                        "title": title,
+                        "start": f"{current.isoformat()}T{start_t}",
+                        "end": f"{current.isoformat()}T{end_t}",
+                        "backgroundColor": bg,
+                        "borderColor": border,
+                        "textColor": text,
+                    })
+                current += timedelta(days=1)
+        else:
+            events.append({
+                "title": title,
+                "start": f"{booking.start_date.isoformat()}T{start_t}",
+                "end": f"{booking.start_date.isoformat()}T{end_t}",
+                "backgroundColor": bg,
+                "borderColor": border,
+                "textColor": text,
+            })
+
+    return JsonResponse(events, safe=False)
