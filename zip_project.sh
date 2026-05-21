@@ -44,6 +44,10 @@ zip -r ../CN334-project.zip . \
   -x "*/.vscode/*" \
   -x ".idea/*" \
   -x "*/.idea/*" \
+  -x ".claude/*" \
+  -x "*/.claude/*" \
+  -x "*/*/.claude/*" \
+  -x "*/*/*/.claude/*" \
   -x "zip_project.sh"
 
 echo "ZIP file created successfully: ../CN334-project.zip"
