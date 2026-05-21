@@ -108,12 +108,36 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% for booking in recent_bookings %}
+                        <tr>
+                            <td class="px-4">{{ booking.room.code }}</td>
+                            <td>
+                                {% if booking.purpose_type == 'COURSE' %}
+                                    {{ booking.course_code }} {{ booking.course_name }}
+                                {% else %}
+                                    {{ booking.training_title }}
+                                {% endif %}
+                            </td>
+                            <td>{{ booking.start_date|date:"d M Y" }}</td>
+                            <td>{{ booking.start_time|time:"H:i" }} - {{ booking.end_time|time:"H:i" }}</td>
+                            <td>
+                                {% if booking.status == 'APPROVED' %}
+                                    <span class="badge bg-success rounded-pill px-3">อนุมัติแล้ว</span>
+                                {% elif booking.status == 'PENDING' %}
+                                    <span class="badge bg-warning text-dark rounded-pill px-3">รออนุมัติ</span>
+                                {% elif booking.status == 'REJECTED' %}
+                                    <span class="badge bg-danger rounded-pill px-3">ปฏิเสธ</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
                         <tr>
                             <td colspan="5" class="table-empty-state">
                                 <i class="fa-solid fa-calendar-xmark"></i>
                                 ยังไม่มีรายการจอง
                             </td>
                         </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>

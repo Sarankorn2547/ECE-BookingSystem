@@ -12,6 +12,14 @@
                 href="{% url 'booking:calendar' %}">ปฏิทินการจอง</a></li>
         <li><a class="nav-link {% if active_page == 'my_bookings' %}active{% endif %}"
                 href="{% url 'booking:my_bookings' %}">การจองของฉัน</a></li>
+        {% if is_admin %}
+        <li><a class="nav-link {% if active_page == 'admin_approvals' %}active{% endif %}"
+                href="{% url 'booking:approval_queue' %}">อนุมัติการจอง</a></li>
+        <li><a class="nav-link {% if active_page == 'admin_reports' %}active{% endif %}"
+                href="{% url 'booking:admin_reports' %}">รายงาน</a></li>
+        <li><a class="nav-link {% if active_page == 'admin_system' %}active{% endif %}"
+                href="{% url 'booking:admin_system' %}">จัดการระบบ</a></li>
+        {% endif %}
         <li><a class="nav-link logout-link" href="{% url 'booking:logout' %}">ออกจากระบบ</a></li>
     </ul>
 </nav>
