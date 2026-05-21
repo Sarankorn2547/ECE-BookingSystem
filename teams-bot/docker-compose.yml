@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - TYPHOON_API_KEY=${TYPHOON_API_KEY}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+    expose:
+      - 8000
+    networks:
+      - ece-network
+      - default
+    restart: unless-stopped
+    labels:
+      - "com.ece.allow_logs=true" # ให้ Dozzle มองเห็นตัวนี้ด้วย
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - ece-network
+      - default
+    depends_on:
+      - web
+    labels:
+      - "com.ece.allow_logs=true"
+
+networks:
+  ece-network:
+    name: ece-bookingsystem_ece-network
+    external: true
+
+volumes:
+  caddy_data:
+  caddy_config:

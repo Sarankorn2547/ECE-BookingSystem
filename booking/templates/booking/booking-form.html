@@ -81,7 +81,7 @@
                                             <i class="fa-solid fa-circle-check room-check-icon"></i>
                                         </div>
                                         <div class="small text-muted mb-2"><i class="fa-solid fa-users me-1"></i> {{ room.capacity }} ที่นั่ง</div>
-                                        <span class="badge bg-light text-dark border fw-normal">{{ room.room_type }}</span>
+                                        <span class="badge bg-light text-dark border fw-normal">{{ room.get_type_display }}</span>
                                     </label>
                                 </div>
                                 {% endfor %}
@@ -100,14 +100,14 @@
                             <div class="row g-3 mb-4">
                                 <div class="col-6">
                                     <input type="radio" class="btn-check" name="purpose_type" id="purpose_course" value="COURSE" autocomplete="off" checked>
-                                    <label class="ece-purpose-btn active d-flex flex-column" for="purpose_course" id="label_purpose_course">
-                                        <i class="fa-solid fa-graduation-cap"></i> สอนปกติ/ชดเชย
+                                    <label class="ece-purpose-btn active d-flex flex-column text-center py-3" for="purpose_course" id="label_purpose_course">
+                                        <i class="fa-solid fa-graduation-cap mb-2 fs-4"></i> สอนปกติ/ชดเชย
                                     </label>
                                 </div>
                                 <div class="col-6">
                                     <input type="radio" class="btn-check" name="purpose_type" id="purpose_training" value="TRAINING" autocomplete="off">
-                                    <label class="ece-purpose-btn d-flex flex-column" for="purpose_training" id="label_purpose_training">
-                                        <i class="fa-solid fa-circle-info"></i> จัดอบรม/จัดติว
+                                    <label class="ece-purpose-btn d-flex flex-column text-center py-3" for="purpose_training" id="label_purpose_training">
+                                        <i class="fa-solid fa-circle-info mb-2 fs-4"></i> จัดอบรม/จัดติว
                                     </label>
                                 </div>
                             </div>
@@ -125,16 +125,16 @@
                                     <div class="col-12 mt-3">
                                         <label class="ece-form-label d-block mb-3">หลักสูตร (Program)</label>
                                         <div class="d-flex flex-wrap gap-2">
-                                            <input type="radio" class="btn-check" name="program" id="prog1" autocomplete="off" checked>
+                                            <input type="radio" class="btn-check" name="program" id="prog1" value="BACHELOR" autocomplete="off" checked>
                                             <label class="ece-pill-btn" for="prog1">ปริญญาตรีภาคปกติ</label>
 
-                                            <input type="radio" class="btn-check" name="program" id="prog2" autocomplete="off">
+                                            <input type="radio" class="btn-check" name="program" id="prog2" value="MASTER" autocomplete="off">
                                             <label class="ece-pill-btn" for="prog2">ปริญญาโท</label>
 
-                                            <input type="radio" class="btn-check" name="program" id="prog3" autocomplete="off">
+                                            <input type="radio" class="btn-check" name="program" id="prog3" value="TEP_TEPE" autocomplete="off">
                                             <label class="ece-pill-btn" for="prog3">TEP-TEPE</label>
 
-                                            <input type="radio" class="btn-check" name="program" id="prog4" autocomplete="off">
+                                            <input type="radio" class="btn-check" name="program" id="prog4" value="TU_PINE" autocomplete="off">
                                             <label class="ece-pill-btn" for="prog4">TU-PINE</label>
                                         </div>
                                     </div>
@@ -146,9 +146,6 @@
                                     <div class="col-12">
                                         <label class="ece-form-label">หัวข้อการฝึกอบรม</label>
                                         <input type="text" name="training_title" class="ece-form-input" placeholder="เช่น Python Programming Workshop">
-                                    </div>
-                                </div>
-                            </div>
                                     </div>
                                 </div>
                             </div>
@@ -167,11 +164,11 @@
                             <div class="row g-4 mb-4">
                                 <div class="col-md-6">
                                     <label class="ece-form-label">ตั้งแต่วันที่</label>
-                                    <input type="date" name="date" class="ece-form-input" required>
+                                    <input type="date" name="start_date" class="ece-form-input" value="{{ initial_date }}" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="ece-form-label">ถึงวันที่</label>
-                                    <input type="date" class="ece-form-input">
+                                    <input type="date" name="end_date" class="ece-form-input" value="{{ initial_date }}">
                                 </div>
                             </div>
 
@@ -193,7 +190,7 @@
                                             <label class="form-check-label" for="tue">อังคาร</label>
                                         </div>
                                         <div class="ece-day-check">
-                                            <input class="form-check-input" type="checkbox" name="days_of_week" id="wed" value="3" checked>
+                                            <input class="form-check-input" type="checkbox" name="days_of_week" id="wed" value="3">
                                             <label class="form-check-label" for="wed">พุธ</label>
                                         </div>
                                         <div class="ece-day-check">
@@ -201,7 +198,7 @@
                                             <label class="form-check-label" for="thu">พฤหัส</label>
                                         </div>
                                         <div class="ece-day-check">
-                                            <input class="form-check-input" type="checkbox" name="days_of_week" id="fri" value="5" checked>
+                                            <input class="form-check-input" type="checkbox" name="days_of_week" id="fri" value="5">
                                             <label class="form-check-label" for="fri">ศุกร์</label>
                                         </div>
                                         <div class="ece-day-check">
@@ -209,16 +206,6 @@
                                             <label class="form-check-label" for="sat">เสาร์</label>
                                         </div>
                                         <div class="ece-day-check">
-                                            <input class="form-check-input" type="checkbox" name="days_of_week" id="sun" value="0">
-                                            <label class="form-check-label" for="sun">อาทิตย์</label>
-                                        </div>
-                                            <label class="form-check-label" for="fri">ศุกร์</label>
-                                        </div>
-                                        <div class="form-check form-check-inline bg-white px-3 py-2 rounded-3 border me-0">
-                                            <input class="form-check-input" type="checkbox" name="days_of_week" id="sat" value="6">
-                                            <label class="form-check-label" for="sat">เสาร์</label>
-                                        </div>
-                                        <div class="form-check form-check-inline bg-white px-3 py-2 rounded-3 border me-0">
                                             <input class="form-check-input" type="checkbox" name="days_of_week" id="sun" value="0">
                                             <label class="form-check-label" for="sun">อาทิตย์</label>
                                         </div>
@@ -246,21 +233,10 @@
                                 <textarea name="notes" class="ece-form-input" rows="3" placeholder="กรุณาระบุหมายเหตุเพิ่มเติม (ถ้ามี)"></textarea>
                             </div>
 
-                            <!-- Conflict Alert -->
-                            <div class="ece-alert-conflict d-none">
-                                <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
-                                <div>
-                                    <h6 class="fw-bold mb-1">พบการชนกันของเวลา (Schedule Conflict)</h6>
-                                    <p class="mb-0 small">ห้อง 406-3 มีการใช้งานแล้วโดย <span class="fw-bold">อ.สมชาย
-                                            (วิชา CN101)</span> ในช่วงเวลา 10:00 - 12:00 วันพุธที่ 22 เม.ย.</p>
-                                </div>
-                            </div>
-
                             <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
-                                <button type="button" class="btn btn-link text-muted text-decoration-none fw-bold px-4">ยกเลิก</button>
+                                <a href="{% url 'booking:dashboard' %}" class="btn btn-link text-muted text-decoration-none fw-bold px-4">ยกเลิก</a>
                                 <button type="submit" class="ece-btn-primary px-5">
                                     <i class="fa-solid fa-paper-plane me-2"></i>ส่งคำขอจอง
-                                </button>
                                 </button>
                             </div>
                         </div>
@@ -269,8 +245,7 @@
 
                 <!-- Email Hint -->
                 <div class="text-center mt-2 mb-5">
-                    <p class="small text-muted"><i class="fa-regular fa-envelope me-1"></i> หลังส่งคำขอ
-                        ระบบจะส่งอีเมลแจ้งเจ้าหน้าที่เพื่อพิจารณาอนุมัติ</p>
+                    <p class="small text-muted"><i class="fa-regular fa-envelope me-1"></i> หลังส่งคำขอ ระบบจะส่งอีเมลแจ้งเจ้าหน้าที่เพื่อพิจารณาอนุมัติ</p>
                 </div>
             </div>
         </div>

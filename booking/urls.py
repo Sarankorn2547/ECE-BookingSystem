@@ -26,5 +26,6 @@ urlpatterns = [
 
     # Admin — Reports & System
     path("admin/reports/", views.admin_reports_view, name="admin_reports"),
+    path("admin/reports/export/", views.admin_reports_export_view, name="admin_reports_export"),
     path("admin/system/", views.admin_system_view, name="admin_system"),
 ]

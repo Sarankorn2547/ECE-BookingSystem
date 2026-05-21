@@ -1,0 +1,22 @@
+{$DOMAIN} {
+    encode gzip
+
+    # Django static files
+    handle /static/* {
+        root * /app
+        file_server
+    }
+
+    # Teams Bot NLP endpoint (same app)
+    handle /api/* {
+        reverse_proxy web:8000
+    }
+
+    # Django web app
+    reverse_proxy web:8000
+}
+
+# Portainer UI — access via portainer.yourdomain.com
+portainer.{$DOMAIN} {
+    reverse_proxy localhost:9000
+}

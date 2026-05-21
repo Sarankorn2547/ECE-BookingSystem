@@ -62,6 +62,12 @@ class Booking(models.Model):
         COURSE = 'COURSE', 'สอนวิชา'
         TRAINING = 'TRAINING', 'ฝึกอบรม'
 
+    class ProgramType(models.TextChoices):
+        BACHELOR = 'BACHELOR', 'ปริญญาตรีภาคปกติ'
+        MASTER = 'MASTER', 'ปริญญาโท'
+        TEP_TEPE = 'TEP_TEPE', 'TEP-TEPE'
+        TU_PINE = 'TU_PINE', 'TU-PINE'
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='bookings')
     booker_id = models.CharField(max_length=100)
@@ -69,6 +75,7 @@ class Booking(models.Model):
     purpose_type = models.CharField(max_length=20, choices=PurposeType.choices, default=PurposeType.COURSE)
     course_code = models.CharField(max_length=50, blank=True, null=True)
     course_name = models.CharField(max_length=200, blank=True, null=True)
+    program = models.CharField(max_length=20, choices=ProgramType.choices, blank=True, null=True)
     training_title = models.CharField(max_length=200, blank=True, null=True)
     start_date = models.DateField()
     end_date = models.DateField()

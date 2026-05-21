@@ -1,5 +1,6 @@
-import json
+import csv
 import logging
+from datetime import timedelta, date
 from functools import wraps
 
 import requests
@@ -10,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -64,6 +65,18 @@ def _base_context(request):
     }
 
 
+def _get_weekdays_count(start_date, end_date):
+    if not start_date or not end_date or start_date > end_date:
+        return 0
+    count = 0
+    curr = start_date
+    while curr <= end_date:
+        if curr.weekday() < 5:
+            count += 1
+        curr += timedelta(days=1)
+    return count
+
+
 # ---------------------------------------------------------------------------
 # Auth
 # ---------------------------------------------------------------------------
@@ -87,6 +100,41 @@ def login_view(request):
             messages.error(request, "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน")
             return render(request, "booking/login.html")
 
+        # Mock login สำหรับ dev/ทดสอบ (admin / admin1234 หรือ testuser / test1234)
+        if (username == "admin" and password == "admin1234") or (username == "testuser" and password == "test1234"):
+            role = UserProfile.Role.ADMIN if username == "admin" else UserProfile.Role.LECTURER
+            display_name_th = "ผู้ดูแลระบบ (Mock)" if username == "admin" else "อาจารย์ผู้ทดสอบ (Mock)"
+            display_name_en = "System Administrator (Mock)" if username == "admin" else "Test Lecturer (Mock)"
+            email = "admin@ece.engr.tu.ac.th" if username == "admin" else "lecturer@ece.engr.tu.ac.th"
+            tu_status = "staff" if username == "admin" else "lecturer"
+
+            user, created = User.objects.get_or_create(
+                username=username,
+                defaults={"email": email, "first_name": display_name_en[:30]},
+            )
+            if not created:
+                user.email = email
+                user.save()
+
+            UserProfile.objects.update_or_create(
+                tu_uid=username,
+                defaults={"username": username, "role": role},
+            )
+
+            request.session["tu_profile"] = {
+                "username": username,
+                "display_name_th": display_name_th,
+                "display_name_en": display_name_en,
+                "email": email,
+                "department": "วิศวกรรมคอมพิวเตอร์",
+                "faculty": "วิศวกรรมศาสตร์",
+                "tu_status": tu_status,
+            }
+            login(request, user)
+            messages.success(request, f"ยินดีต้อนรับ, {display_name_th}")
+            return redirect("booking:dashboard")
+
+        # TU REST API Login
         tu_api_key = settings.TU_REST_API_KEY
         try:
             response = requests.post(
@@ -358,7 +406,7 @@ def calendar_view(request):
 
 @login_required
 def calendar_events_api(request):
-    from datetime import datetime, date, timedelta
+    from datetime import datetime
 
     start_str = request.GET.get("start", "")
     end_str = request.GET.get("end", "")
@@ -402,7 +450,6 @@ def calendar_events_api(request):
         effective_end = min(booking.end_date, range_end)
 
         if days_of_week:
-            from datetime import timedelta as td
             current = effective_start
             while current <= effective_end:
                 if current.weekday() in days_of_week:
@@ -414,7 +461,7 @@ def calendar_events_api(request):
                         "borderColor": border,
                         "textColor": text,
                     })
-                current += td(days=1)
+                current += timedelta(days=1)
         else:
             events.append({
                 "title": title,
@@ -492,29 +539,147 @@ def reject_view(request, booking_id):
 @login_required
 @admin_required
 def admin_reports_view(request):
+    from django.utils.dateparse import parse_date
+
+    start_date_str = request.GET.get("start_date", "")
+    end_date_str = request.GET.get("end_date", "")
+
+    start_date = parse_date(start_date_str) if start_date_str else None
+    end_date = parse_date(end_date_str) if end_date_str else None
+
+    if not start_date or not end_date:
+        today = date.today()
+        if not start_date:
+            start_date = today.replace(day=1)
+        if not end_date:
+            next_month = today.replace(day=28) + timedelta(days=4)
+            end_date = next_month - timedelta(days=next_month.day)
+
+    filter_bookings = Booking.objects.filter(
+        end_date__gte=start_date,
+        start_date__lte=end_date,
+    )
     status_counts = {
         item["status"]: item["count"]
-        for item in Booking.objects.values("status").annotate(count=Count("id"))
+        for item in filter_bookings.values("status").annotate(count=Count("id"))
     }
-    room_usage = (
-        Booking.objects.filter(status=Booking.Status.APPROVED)
-        .values("room__code")
-        .annotate(count=Count("id"))
-        .order_by("-count")
-    )
-    total_bookings = Booking.objects.count()
+    total_bookings = sum(status_counts.values())
+
+    rooms = Room.objects.all().order_by("code")
+    weekdays_count = _get_weekdays_count(start_date, end_date)
+    max_hours = weekdays_count * 10.0
+
+    approved_bookings = Booking.objects.filter(
+        status=Booking.Status.APPROVED,
+        start_date__lte=end_date,
+        end_date__gte=start_date,
+    ).select_related("room")
+
+    room_stats = []
+    for room in rooms:
+        room_hours = 0.0
+        booking_count = 0
+        for b in approved_bookings:
+            if b.room_id != room.id:
+                continue
+            booking_count += 1
+            o_start = max(start_date, b.start_date)
+            o_end = min(end_date, b.end_date)
+            start_hour = b.start_time.hour + b.start_time.minute / 60.0
+            end_hour = b.end_time.hour + b.end_time.minute / 60.0
+            duration = max(0.0, end_hour - start_hour)
+            curr = o_start
+            while curr <= o_end:
+                b_days = set(b.days_of_week) if b.days_of_week else None
+                curr_js_day = (curr.weekday() + 1) % 7
+                if (not b_days) or (curr_js_day in b_days):
+                    room_hours += duration
+                curr += timedelta(days=1)
+        utilization = min(100.0, round((room_hours / max_hours) * 100, 1)) if max_hours > 0 else 0.0
+        room_stats.append({
+            "room": room,
+            "count": booking_count,
+            "hours": round(room_hours, 1),
+            "utilization": utilization,
+        })
+
     context = {
         **_base_context(request),
         "active_page": "admin_reports",
-        "status_counts": status_counts,
-        "room_usage": room_usage,
         "total_bookings": total_bookings,
         "pending_count": status_counts.get("PENDING", 0),
         "approved_count": status_counts.get("APPROVED", 0),
         "rejected_count": status_counts.get("REJECTED", 0),
         "cancelled_count": status_counts.get("CANCELLED", 0),
+        "room_stats": room_stats,
+        "start_date": start_date,
+        "end_date": end_date,
+        "weekdays_count": weekdays_count,
     }
     return render(request, "booking/admin-reports.html", context)
+
+
+@login_required
+@admin_required
+def admin_reports_export_view(request):
+    from django.utils.dateparse import parse_date
+
+    start_date_str = request.GET.get("start_date", "")
+    end_date_str = request.GET.get("end_date", "")
+    start_date = parse_date(start_date_str) if start_date_str else None
+    end_date = parse_date(end_date_str) if end_date_str else None
+
+    if not start_date or not end_date:
+        today = date.today()
+        if not start_date:
+            start_date = today.replace(day=1)
+        if not end_date:
+            next_month = today.replace(day=28) + timedelta(days=4)
+            end_date = next_month - timedelta(days=next_month.day)
+
+    rooms = Room.objects.all().order_by("code")
+    weekdays_count = _get_weekdays_count(start_date, end_date)
+    max_hours = weekdays_count * 10.0
+
+    approved_bookings = Booking.objects.filter(
+        status=Booking.Status.APPROVED,
+        start_date__lte=end_date,
+        end_date__gte=start_date,
+    ).select_related("room")
+
+    response = HttpResponse(content_type="text/csv; charset=utf-8-sig")
+    response["Content-Disposition"] = f'attachment; filename="ece_room_utilization_{start_date}_to_{end_date}.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(["รายงานสรุปการใช้ห้องระบบ ECE"])
+    writer.writerow([f"ช่วงวันที่: {start_date} ถึง {end_date}"])
+    writer.writerow([f"จำนวนวันทำการ (จันทร์-ศุกร์): {weekdays_count} วัน"])
+    writer.writerow([])
+    writer.writerow(["รหัสห้อง", "ชื่อห้อง", "จำนวนครั้งที่จอง", "ชั่วโมงที่ใช้งานทั้งหมด", "อัตราการใช้งาน (%)"])
+
+    for room in rooms:
+        room_hours = 0.0
+        booking_count = 0
+        for b in approved_bookings:
+            if b.room_id != room.id:
+                continue
+            booking_count += 1
+            o_start = max(start_date, b.start_date)
+            o_end = min(end_date, b.end_date)
+            start_hour = b.start_time.hour + b.start_time.minute / 60.0
+            end_hour = b.end_time.hour + b.end_time.minute / 60.0
+            duration = max(0.0, end_hour - start_hour)
+            curr = o_start
+            while curr <= o_end:
+                b_days = set(b.days_of_week) if b.days_of_week else None
+                curr_js_day = (curr.weekday() + 1) % 7
+                if (not b_days) or (curr_js_day in b_days):
+                    room_hours += duration
+                curr += timedelta(days=1)
+        utilization = min(100.0, round((room_hours / max_hours) * 100, 1)) if max_hours > 0 else 0.0
+        writer.writerow([room.code, room.name, booking_count, round(room_hours, 1), f"{utilization}%"])
+
+    return response
 
 
 # ---------------------------------------------------------------------------
