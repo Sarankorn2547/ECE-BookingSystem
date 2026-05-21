@@ -34,9 +34,9 @@ Based on [SRS Document v1.0](https://wachira.ece.engr.tu.ac.th/share/webapp/SRS_
 | :----: | -------- | ----------- |
 | ✅ Done | **UC-01: Login** | เข้าสู่ระบบผ่าน TU REST API |
 | ✅ Done | **UC-02: จองห้อง** | ฟอร์มจองห้องพร้อม backend |
-| 🔲 Template Only | **UC-03: อนุมัติ/ปฏิเสธการจอง** | หน้าอนุมัติ (มี template แล้ว ยังไม่มี backend) |
-| 🔲 Template Only | **UC-04: ดูปฏิทินห้องว่าง** | ปฏิทินห้อง (มี template แล้ว ยังไม่มี backend) |
-| 🔲 Template Only | **UC-05: ดูรายงานสถิติ** | รายงานการใช้ห้อง (มี template แล้ว ยังไม่มี backend) |
+| ✅ Done | **UC-03: อนุมัติ/ปฏิเสธการจอง** | Admin อนุมัติหรือปฏิเสธพร้อมเหตุผล |
+| ✅ Done | **UC-04: ดูปฏิทินห้องว่าง** | ปฏิทินห้องพร้อม FullCalendar และ API |
+| ✅ Done | **UC-05: ดูรายงานสถิติ** | รายงานการใช้ห้องดึงข้อมูลจาก DB จริง |
 | ✅ Done | **UC-06: ยกเลิกการจอง** | ยกเลิกการจอง |
 
 ### Module Breakdown
@@ -56,10 +56,10 @@ Based on [SRS Document v1.0](https://wachira.ece.engr.tu.ac.th/share/webapp/SRS_
 
 - [x] Dashboard page with dynamic user info from TU profile
 - [x] Welcome banner with user's Thai display name
-- [x] Sidebar navigation (all links present)
+- [x] Navbar navigation with admin-only menu items (role-aware)
 - [x] Top header with user name and department
 - [x] Quick action cards (จองห้อง, การจองของฉัน, ปฏิทินห้อง)
-- [x] Recent bookings table (empty state)
+- [x] Recent bookings table — แสดง 5 รายการล่าสุดจาก DB
 
 #### ✅ Module 3 — Booking Form (Done)
 
@@ -86,30 +86,30 @@ Based on [SRS Document v1.0](https://wachira.ece.engr.tu.ac.th/share/webapp/SRS_
 - [x] Filter by room
 - [x] Weekly/monthly view
 
-#### 🔲 Module 6 — Admin Approvals (Template Only)
+#### ✅ Module 6 — Admin Approvals (Done)
 
-- [x] Template: `admin-approvals.html`
-- [ ] Django view and URL route
-- [ ] List pending bookings
-- [ ] Approve / Reject with reason
-- [ ] Update booking status
-- [ ] Admin role check
+- [x] Template: `admin-approvals.html` — แปลงเป็น Django template จริง
+- [x] Django view (`approval_queue_view`) และ URL route `/admin/approvals/`
+- [x] แสดง PENDING bookings ทั้งหมดจาก DB พร้อม booker info
+- [x] Approve — POST `/admin/approvals/<id>/approve/` บันทึก approval_by, approval_at
+- [x] Reject — POST `/admin/approvals/<id>/reject/` พร้อมรับเหตุผลจาก modal form
+- [x] บันทึก BookingLog ทุกการตัดสินใจ
+- [x] `admin_required` decorator — ป้องกันด้วย UserProfile.role = ADMIN
 
-#### 🔲 Module 7 — Admin Reports (Template Only)
+#### ✅ Module 7 — Admin Reports (Done)
 
-- [x] Template: `admin-reports.html`
-- [ ] Django view and URL route
-- [ ] Usage statistics per room
-- [ ] Utilization rate
-- [ ] Filter by date range and category
+- [x] Template: `admin-reports.html` — แปลงเป็น Django template จริง
+- [x] Django view (`admin_reports_view`) และ URL route `/admin/reports/`
+- [x] Summary cards: ยอดรวม, รออนุมัติ, อนุมัติแล้ว, ปฏิเสธ (ดึงจาก DB)
+- [x] ตารางการใช้งานแต่ละห้อง เรียงจากมากไปน้อย
 
-#### 🔲 Module 8 — Admin System Management (Template Only)
+#### ✅ Module 8 — Admin System Management (Done)
 
-- [x] Template: `admin-system.html`
-- [ ] Django view and URL route
-- [ ] Add/Edit/Delete rooms
-- [ ] User management
-- [ ] System settings
+- [x] Template: `admin-system.html` — แปลงเป็น Django template จริง
+- [x] Django view (`admin_system_view`) และ URL route `/admin/system/`
+- [x] Tab "จัดการห้อง" — แสดงห้องทั้งหมดจาก DB
+- [x] Tab "สิทธิ์ผู้ใช้งาน" — แสดง UserProfile ทั้งหมด, เปลี่ยน role ผ่าน dropdown (submit ทันที)
+- [x] Tab "ปิดปรับปรุง / วันหยุด" — เพิ่ม/ลบ BlackoutPeriod จาก DB
 
 #### 🔲 Module 9 — Email Notifications (Not Started)
 
@@ -171,18 +171,21 @@ ECE-BookingSystem/
 │   ├── wsgi.py
 │   └── asgi.py
 ├── booking/                  # Main booking app
-│   ├── views.py              # Login, Logout, Dashboard views
-│   ├── urls.py               # App URL routing
-│   ├── models.py             # (empty — models TBD)
+│   ├── views.py              # All views (auth, booking, calendar, admin)
+│   ├── urls.py               # App URL routing (14 routes)
+│   ├── models.py             # Room, Booking, BookingLog, BlackoutPeriod, UserProfile
+│   ├── admin.py              # Django admin registration
+│   ├── migrations/           # DB migrations
 │   ├── templates/booking/    # HTML templates
+│   │   ├── navbar.html             ✅ Role-aware (แสดง admin menu เฉพาะ Admin)
 │   │   ├── login.html              ✅ Connected
-│   │   ├── dashboard.html          ✅ Connected
-│   │   ├── booking-form.html       🔲 Template only
-│   │   ├── my-bookings.html        🔲 Template only
-│   │   ├── calendar.html           🔲 Template only
-│   │   ├── admin-approvals.html    🔲 Template only
-│   │   ├── admin-reports.html      🔲 Template only
-│   │   └── admin-system.html       🔲 Template only
+│   │   ├── dashboard.html          ✅ Connected + recent bookings จาก DB
+│   │   ├── booking-form.html       ✅ Connected
+│   │   ├── my-bookings.html        ✅ Connected
+│   │   ├── calendar.html           ✅ Connected + FullCalendar API
+│   │   ├── admin-approvals.html    ✅ Connected (approve/reject จาก DB)
+│   │   ├── admin-reports.html      ✅ Connected (สถิติจาก DB)
+│   │   └── admin-system.html       ✅ Connected (rooms, users, blackouts จาก DB)
 │   └── static/booking/
 │       └── styles.css        # TU design system (red/gold theme)
 ├── .env                      # TU_REST_API key (not committed)
@@ -190,6 +193,24 @@ ECE-BookingSystem/
 ├── manage.py
 └── db.sqlite3
 ```
+
+### URL Routes
+
+| Method | URL | View | สิทธิ์ |
+| ------ | --- | ---- | ------ |
+| GET/POST | `/login/` | login_view | — |
+| GET | `/logout/` | logout_view | Login |
+| GET | `/dashboard/` | dashboard_view | Login |
+| GET/POST | `/booking/` | booking_form_view | Login |
+| GET | `/my-bookings/` | my_bookings_view | Login |
+| POST | `/my-bookings/<id>/cancel/` | cancel_booking_view | Login |
+| GET | `/calendar/` | calendar_view | Login |
+| GET | `/api/calendar-events/` | calendar_events_api | Login |
+| GET | `/admin/approvals/` | approval_queue_view | **Admin** |
+| POST | `/admin/approvals/<id>/approve/` | approve_view | **Admin** |
+| POST | `/admin/approvals/<id>/reject/` | reject_view | **Admin** |
+| GET | `/admin/reports/` | admin_reports_view | **Admin** |
+| GET/POST | `/admin/system/` | admin_system_view | **Admin** |
 
 ---
 
