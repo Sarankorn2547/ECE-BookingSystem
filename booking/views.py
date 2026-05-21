@@ -237,12 +237,14 @@ def booking_form_view(request):
 
     if request.method == "POST":
         room_id = request.POST.get("room")
-        start_date_str = request.POST.get("date")
+        start_date_str = request.POST.get("start_date") or request.POST.get("date")
+        end_date_str = request.POST.get("end_date") or start_date_str
         start_time_str = request.POST.get("start_time")
         end_time_str = request.POST.get("end_time")
         purpose_type = request.POST.get("purpose_type", "").strip()
         course_code = request.POST.get("course_code", "").strip()
         course_name = request.POST.get("course_name", "").strip()
+        program = request.POST.get("program", "").strip() or None
         training_title = request.POST.get("training_title", "").strip()
         notes = request.POST.get("notes", "").strip()
         days_of_week_values = request.POST.getlist("days_of_week")
@@ -270,6 +272,7 @@ def booking_form_view(request):
         try:
             room = Room.objects.get(id=room_id)
             start_date = parse_date(start_date_str)
+            end_date = parse_date(end_date_str) if end_date_str else start_date
             start_time = parse_time(start_time_str)
             end_time = parse_time(end_time_str)
 
@@ -302,9 +305,10 @@ def booking_form_view(request):
                 purpose_type=purpose_type,
                 course_code=course_code or None,
                 course_name=course_name or None,
+                program=program,
                 training_title=training_title or None,
                 start_date=start_date,
-                end_date=start_date,
+                end_date=end_date,
                 start_time=start_time,
                 end_time=end_time,
                 recurring_pattern=recurring_pattern,

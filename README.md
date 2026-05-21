@@ -127,7 +127,7 @@ Based on [SRS Document v1.0](https://wachira.ece.engr.tu.ac.th/share/webapp/SRS_
 
 ### Prerequisites
 
-- Python 3.12+
+- Python 3.10–3.13 (แนะนำ 3.13 — Python 3.14 ยังไม่รองรับ Django 5.x อย่างเป็นทางการ)
 - TU REST API Application-Key (register at [restapi.tu.ac.th](https://restapi.tu.ac.th))
 
 ### Installation
@@ -152,6 +152,9 @@ echo TU_REST_API=your_application_key_here > .env
 # Run migrations
 python manage.py migrate
 
+# Load room seed data (5 ห้องตาม SRS)
+python manage.py loaddata booking/fixtures/rooms.json
+
 # Start development server
 python manage.py runserver
 ```
@@ -160,7 +163,18 @@ python manage.py runserver
 
 - **Login:** http://127.0.0.1:8000/login/
 - **Dashboard:** http://127.0.0.1:8000/dashboard/
-- **Admin Panel:** http://127.0.0.1:8000/admin/
+- **Admin Panel:** http://127.0.0.1:8000/admin/approvals/
+- **Django Built-in Admin:** http://127.0.0.1:8000/django-admin/
+
+### Dev Login (ทดสอบโดยไม่ต้องใช้ TU REST API)
+
+| Username | Password | Role |
+|----------|----------|------|
+| `admin` | `admin1234` | ADMIN |
+| `testuser` | `test1234` | LECTURER |
+
+> หมายเหตุ: `psycopg2` ต้องไม่ติดตั้งอยู่ในเครื่อง หากติดตั้งไว้ Django จะพยายามต่อ PostgreSQL แทน SQLite  
+> แก้ด้วย: `pip uninstall psycopg2`
 
 ---
 
@@ -239,7 +253,9 @@ ECE-BookingSystem/
 | POST | `/admin/approvals/<id>/approve/` | approve_view | **Admin** |
 | POST | `/admin/approvals/<id>/reject/` | reject_view | **Admin** |
 | GET | `/admin/reports/` | admin_reports_view | **Admin** |
+| GET | `/admin/reports/export/` | admin_reports_export_view | **Admin** |
 | GET/POST | `/admin/system/` | admin_system_view | **Admin** |
+| — | `/django-admin/` | Django built-in admin | Superuser |
 
 ---
 
