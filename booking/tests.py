@@ -1,3 +1,197 @@
-from django.test import TestCase
+from datetime import date, time, timedelta
+from django.test import TestCase, Client
+from django.contrib.auth.models import User
+from django.urls import reverse
+from django.utils import timezone
+from .models import Room, UserProfile, Booking, BlackoutPeriod, BookingLog
+from .utils import check_booking_conflict
 
-# Create your tests here.
+class RoomModelTest(TestCase):
+    def test_room_creation_and_str(self):
+        room = Room.objects.create(
+            code="406-3",
+            name="ห้องประชุม 1",
+            type=Room.RoomType.MEETING,
+            capacity=60
+        )
+        self.assertEqual(str(room), "406-3 - ห้องประชุม 1")
+
+class UserProfileModelTest(TestCase):
+    def test_user_profile_creation_and_str(self):
+        profile = UserProfile.objects.create(
+            tu_uid="testuser",
+            username="testuser",
+            role=UserProfile.Role.LECTURER
+        )
+        self.assertEqual(str(profile), "testuser (LECTURER)")
+
+class ConflictDetectionTest(TestCase):
+    def setUp(self):
+        self.room = Room.objects.create(
+            code="406-3",
+            name="ห้องประชุม 1",
+            type=Room.RoomType.MEETING,
+            capacity=60
+        )
+
+    def test_no_conflict_different_times(self):
+        # Existing booking: 09:00 - 11:00
+        Booking.objects.create(
+            room=self.room,
+            booker_id="user1",
+            booker_name="User 1",
+            purpose_type=Booking.PurposeType.COURSE,
+            start_date=date(2026, 6, 1),
+            end_date=date(2026, 6, 1),
+            start_time=time(9, 0),
+            end_time=time(11, 0),
+            status=Booking.Status.APPROVED
+        )
+
+        # Proposed booking: 11:00 - 13:00 (no overlap on boundary)
+        conflict = check_booking_conflict(
+            room=self.room,
+            start_date=date(2026, 6, 1),
+            end_date=date(2026, 6, 1),
+            start_time=time(11, 0),
+            end_time=time(13, 0)
+        )
+        self.assertIsNone(conflict)
+
+    def test_conflict_overlapping_times(self):
+        # Existing booking: 09:00 - 11:00
+        Booking.objects.create(
+            room=self.room,
+            booker_id="user1",
+            booker_name="User 1",
+            purpose_type=Booking.PurposeType.COURSE,
+            start_date=date(2026, 6, 1),
+            end_date=date(2026, 6, 1),
+            start_time=time(9, 0),
+            end_time=time(11, 0),
+            status=Booking.Status.APPROVED
+        )
+
+        # Proposed booking: 10:00 - 12:00 (overlaps 10:00-11:00)
+        conflict = check_booking_conflict(
+            room=self.room,
+            start_date=date(2026, 6, 1),
+            end_date=date(2026, 6, 1),
+            start_time=time(10, 0),
+            end_time=time(12, 0)
+        )
+        self.assertIsNotNone(conflict)
+        self.assertIn("ชนกับการจองที่มีอยู่แล้ว", conflict)
+
+    def test_conflict_recurring(self):
+        # Existing weekly recurring booking on Tuesday (weekday = 1, so (Tuesday(1) + 1)%7 = 2. Python Tuesday is 1. FullCalendar Tuesday is 2)
+        # Note: python weekday: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
+        # utils.py uses: curr_js_day = (curr.weekday() + 1) % 7
+        # For Tuesday, curr.weekday() is 1, so (1 + 1) % 7 = 2
+        Booking.objects.create(
+            room=self.room,
+            booker_id="user1",
+            booker_name="User 1",
+            purpose_type=Booking.PurposeType.COURSE,
+            start_date=date(2026, 6, 1),
+            end_date=date(2026, 6, 30),
+            start_time=time(9, 0),
+            end_time=time(11, 0),
+            days_of_week=[2],  # Tuesday (js index: Sunday=0, Monday=1, Tuesday=2)
+            status=Booking.Status.APPROVED
+        )
+
+        # Proposed: 2026-06-09 (Tuesday) 10:00-12:00
+        conflict = check_booking_conflict(
+            room=self.room,
+            start_date=date(2026, 6, 9),
+            end_date=date(2026, 6, 9),
+            start_time=time(10, 0),
+            end_time=time(12, 0)
+        )
+        self.assertIsNotNone(conflict)
+
+    def test_blackout_period_conflict(self):
+        # Blackout period: all rooms closed on 2026-06-15
+        BlackoutPeriod.objects.create(
+            title= "วันหยุดชดเชย",
+            start_date=date(2026, 6, 15),
+            end_date=date(2026, 6, 15)
+        )
+
+        conflict = check_booking_conflict(
+            room=self.room,
+            start_date=date(2026, 6, 15),
+            end_date=date(2026, 6, 15),
+            start_time=time(9, 0),
+            end_time=time(17, 0)
+        )
+        self.assertIsNotNone(conflict)
+        self.assertIn("ชนกับช่วงเวลาปิดปรับปรุง/วันหยุด", conflict)
+
+class ViewAuthAndBookingTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.room = Room.objects.create(
+            code="406-3",
+            name="ห้องประชุม 1",
+            type=Room.RoomType.MEETING,
+            capacity=60
+        )
+
+    def test_mock_login_lecturer(self):
+        response = self.client.post(reverse('booking:login'), {
+            'username': 'testuser',
+            'password': 'test1234'
+        })
+        self.assertRedirects(response, reverse('booking:dashboard'))
+        
+        # Verify User and UserProfile created
+        user = User.objects.get(username='testuser')
+        self.assertEqual(user.username, 'testuser')
+        profile = UserProfile.objects.get(tu_uid='testuser')
+        self.assertEqual(profile.role, UserProfile.Role.LECTURER)
+
+    def test_mock_login_admin(self):
+        response = self.client.post(reverse('booking:login'), {
+            'username': 'admin',
+            'password': 'admin1234'
+        })
+        self.assertRedirects(response, reverse('booking:dashboard'))
+        
+        profile = UserProfile.objects.get(tu_uid='admin')
+        self.assertEqual(profile.role, UserProfile.Role.ADMIN)
+
+    def test_unauthenticated_redirect(self):
+        response = self.client.get(reverse('booking:dashboard'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_booking_submission(self):
+        # Login first
+        self.client.post(reverse('booking:login'), {
+            'username': 'testuser',
+            'password': 'test1234'
+        })
+
+        # Submit booking
+        response = self.client.post(reverse('booking:booking_form'), {
+            'room': str(self.room.id),
+            'start_date': '2026-06-01',
+            'end_date': '2026-06-01',
+            'start_time': '09:00',
+            'end_time': '11:00',
+            'purpose_type': 'COURSE',
+            'course_code': 'CN334',
+            'course_name': 'Web App Development',
+            'program': 'BACHELOR',
+            'notes': 'Normal Lecture'
+        })
+        self.assertRedirects(response, reverse('booking:dashboard'))
+        
+        # Verify booking created
+        bookings = Booking.objects.filter(room=self.room)
+        self.assertEqual(bookings.count(), 1)
+        booking = bookings.first()
+        self.assertEqual(booking.status, Booking.Status.PENDING)
+        self.assertEqual(booking.booker_id, 'testuser')
+        self.assertEqual(booking.course_code, 'CN334')

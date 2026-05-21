@@ -1,0 +1,80 @@
+[
+  {
+    "model": "booking.room",
+    "pk": "d9c0b1a0-7b24-4fbb-a1b2-111111111111",
+    "fields": {
+      "code": "406-3",
+      "name": "ห้องประชุม 1",
+      "type": "MEETING",
+      "capacity": 60,
+      "created_at": "2026-05-21T12:00:00Z",
+      "updated_at": "2026-05-21T12:00:00Z"
+    }
+  },
+  {
+    "model": "booking.room",
+    "pk": "d9c0b1a0-7b24-4fbb-a1b2-222222222222",
+    "fields": {
+      "code": "406-5",
+      "name": "ห้องประชุม 2",
+      "type": "MEETING",
+      "capacity": 15,
+      "created_at": "2026-05-21T12:00:00Z",
+      "updated_at": "2026-05-21T12:00:00Z"
+    }
+  },
+  {
+    "model": "booking.room",
+    "pk": "d9c0b1a0-7b24-4fbb-a1b2-333333333333",
+    "fields": {
+      "code": "408-1",
+      "name": "ห้องประชุม 3",
+      "type": "MEETING",
+      "capacity": 10,
+      "created_at": "2026-05-21T12:00:00Z",
+      "updated_at": "2026-05-21T12:00:00Z"
+    }
+  },
+  {
+    "model": "booking.room",
+    "pk": "d9c0b1a0-7b24-4fbb-a1b2-444444444444",
+    "fields": {
+      "code": "408-2/1",
+      "name": "ห้องบรรยาย 1",
+      "type": "LECTURE",
+      "capacity": 20,
+      "created_at": "2026-05-21T12:00:00Z",
+      "updated_at": "2026-05-21T12:00:00Z"
+    }
+  },
+  {
+    "model": "booking.room",
+    "pk": "d9c0b1a0-7b24-4fbb-a1b2-555555555555",
+    "fields": {
+      "code": "408-2/2",
+      "name": "ห้องบรรยาย 2",
+      "type": "LECTURE",
+      "capacity": 20,
+      "created_at": "2026-05-21T12:00:00Z",
+      "updated_at": "2026-05-21T12:00:00Z"
+    }
+  },
+  {
+    "model": "booking.userprofile",
+    "pk": "a0e2a3c0-0000-0000-0000-000000000001",
+    "fields": {
+      "tu_uid": "admin",
+      "username": "admin",
+      "role": "ADMIN"
+    }
+  },
+  {
+    "model": "booking.userprofile",
+    "pk": "a0e2a3c0-0000-0000-0000-000000000002",
+    "fields": {
+      "tu_uid": "testuser",
+      "username": "testuser",
+      "role": "LECTURER"
+    }
+  }
+]

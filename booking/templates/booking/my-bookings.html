@@ -1,210 +1,142 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>การจองของฉัน - ระบบจองห้องประชุม TU</title>
-    
-    <!-- Google Fonts -->
+    <title>การจองของฉัน - ระบบจองห้อง ECE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
-    
-    <!-- Bootstrap 5 CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom Styles -->
-    <link rel="stylesheet" href="styles.css">
-    <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="{% static 'booking/styles.css' %}">
 </head>
-<body hx-boost="true">
+<body>
+    {% include 'booking/navbar.html' %}
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-logo text-center">
-            <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle mb-2" style="width: 50px; height: 50px;">
-                <span style="color: var(--tu-red); font-weight: 800; font-size: 1.2rem;">TU</span>
-            </div>
-            <h5 class="mb-0 fw-bold small text-white">ROOM BOOKING</h5>
-            <p class="small opacity-75 mb-0" style="font-size: 0.7rem;">DEPT. OF ELECTRICAL & COMPUTER ENG.</p>
+    <section class="page-header">
+        <div class="page-header-bg"></div>
+        <div class="page-header-content">
+            <h1 class="page-header-title"><i class="fa-solid fa-list-check me-3"></i>การจองของฉัน</h1>
+            <p class="page-header-subtitle">My Bookings — ดูและจัดการรายการจองทั้งหมดของคุณ</p>
         </div>
+    </section>
 
-        <nav class="nav flex-column">
-            <div class="px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Menu</div>
-            <a class="nav-link" href="dashboard.html">
-                <i class="fa-solid fa-house"></i> Dashboard
-            </a>
-            <a class="nav-link" href="booking-form.html">
-                <i class="fa-solid fa-calendar-plus"></i> จองห้อง
-            </a>
-            <a class="nav-link active" href="my-bookings.html">
-                <i class="fa-solid fa-list-check"></i> การจองของฉัน
-            </a>
-            <a class="nav-link" href="calendar.html">
-                <i class="fa-solid fa-calendar-days"></i> ปฏิทินห้อง
-            </a>
-
-            <div class="mt-4 px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Admin</div>
-            <a class="nav-link" href="admin-approvals.html">
-                <i class="fa-solid fa-clipboard-check"></i> อนุมัติการจอง
-            </a>
-            <a class="nav-link" href="admin-reports.html">
-                <i class="fa-solid fa-chart-pie"></i> รายงาน
-            </a>
-            <a class="nav-link" href="admin-system.html">
-                <i class="fa-solid fa-gears"></i> จัดการระบบ
-            </a>
-
-            <div class="mt-auto pt-4 border-top border-white border-opacity-10">
-                <a class="nav-link text-white-50" href="login.html">
-                    <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
-                </a>
-            </div>
-        </nav>
+    {% if messages %}
+    <div class="home-toast-container" id="toast-container">
+        {% for message in messages %}
+        <div class="home-toast home-toast-{{ message.tags }}">
+            {% if 'success' in message.tags %}<i class="fa-solid fa-circle-check"></i>
+            {% elif 'error' in message.tags or 'danger' in message.tags %}<i class="fa-solid fa-circle-exclamation"></i>
+            {% else %}<i class="fa-solid fa-circle-info"></i>{% endif %}
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
     </div>
+    {% endif %}
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Top Header -->
-        <header class="top-header rounded-4 mb-4 shadow-sm">
-            <h4 class="mb-0 fw-bold">การจองของฉัน (My Bookings)</h4>
-            <div class="d-flex align-items-center gap-3">
-                <div class="text-end d-none d-md-block">
-                    <p class="mb-0 fw-bold small">อ.ดร. ทดสอบ ระบบ</p>
-                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Lecturer • Computer Engineering</p>
-                </div>
-                <div class="bg-light rounded-circle p-2 border">
-                    <i class="fa-solid fa-user-tie fa-lg text-tu-red" style="color: var(--tu-red);"></i>
-                </div>
-            </div>
-        </header>
-
+    <div class="page-content">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-            <div class="nav nav-pills bg-white p-1 rounded-pill shadow-sm border">
-                <button class="nav-link active rounded-pill px-4" style="background-color: var(--tu-red);">ทั้งหมด</button>
-                <button class="nav-link rounded-pill px-4 text-dark">รออนุมัติ</button>
-                <button class="nav-link rounded-pill px-4 text-dark">อนุมัติแล้ว</button>
-                <button class="nav-link rounded-pill px-4 text-dark">ถูกปฏิเสธ</button>
+            <div class="ece-tab-bar">
+                <a href="?{% if search_query %}q={{ search_query }}&{% endif %}" class="ece-tab {% if not status_filter %}active{% endif %}">ทั้งหมด</a>
+                <a href="?status=PENDING{% if search_query %}&q={{ search_query }}{% endif %}" class="ece-tab {% if status_filter == 'PENDING' %}active{% endif %}">รออนุมัติ</a>
+                <a href="?status=APPROVED{% if search_query %}&q={{ search_query }}{% endif %}" class="ece-tab {% if status_filter == 'APPROVED' %}active{% endif %}">อนุมัติแล้ว</a>
+                <a href="?status=REJECTED{% if search_query %}&q={{ search_query }}{% endif %}" class="ece-tab {% if status_filter == 'REJECTED' %}active{% endif %}">ถูกปฏิเสธ</a>
             </div>
-            <div class="d-flex gap-2">
-                <div class="position-relative">
-                    <i class="fa-solid fa-magnifying-glass position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                    <input type="text" class="form-control rounded-pill ps-5 border-2" placeholder="ค้นหาการจอง..." style="width: 250px;">
-                </div>
-            </div>
+            <form method="get" action="" class="position-relative">
+                {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+                <i class="fa-solid fa-magnifying-glass position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                <input type="text" name="q" value="{{ search_query }}" class="ece-form-input ps-5" placeholder="ค้นหาการจอง..." style="width: 260px;">
+            </form>
         </div>
 
-        <div class="card border-0 shadow-sm overflow-hidden">
+        <div class="home-recent-card">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light text-muted small text-uppercase fw-bold">
+                    <thead class="bg-light">
                         <tr>
-                            <th class="px-4 py-3 border-0">รายการ / ID</th>
-                            <th class="py-3 border-0">ห้อง</th>
-                            <th class="py-3 border-0">วัน และ เวลา</th>
-                            <th class="py-3 border-0">สถานะ</th>
-                            <th class="px-4 py-3 border-0 text-end">จัดการ</th>
+                            <th class="px-4 py-3">รายการ / ID</th>
+                            <th class="py-3">ห้อง</th>
+                            <th class="py-3">วัน และ เวลา</th>
+                            <th class="py-3">สถานะ</th>
+                            <th class="px-4 py-3 text-end">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
+                        {% for booking in bookings %}
+                        <tr {% if booking.status == 'REJECTED' or booking.status == 'CANCELLED' %}class="opacity-75"{% endif %}>
                             <td class="px-4">
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="bg-primary bg-opacity-10 p-2 rounded text-primary">
-                                        <i class="fa-solid fa-graduation-cap"></i>
-                                    </div>
+                                    {% if booking.purpose_type == 'COURSE' %}
+                                    <div class="ece-icon-box blue"><i class="fa-solid fa-graduation-cap"></i></div>
+                                    {% else %}
+                                    <div class="ece-icon-box yellow"><i class="fa-solid fa-users"></i></div>
+                                    {% endif %}
                                     <div>
-                                        <p class="mb-0 fw-bold">สอบกลางภาควิชา CN341</p>
-                                        <p class="mb-0 text-muted small">ID: BK-2026-001</p>
+                                        <p class="mb-0 fw-bold">
+                                            {% if booking.purpose_type == 'COURSE' %}
+                                                {% if booking.course_code %}{{ booking.course_code }}{% endif %}{% if booking.course_code and booking.course_name %} — {% endif %}{% if booking.course_name %}{{ booking.course_name }}{% endif %}
+                                            {% else %}
+                                                {{ booking.training_title }}
+                                            {% endif %}
+                                        </p>
+                                        <p class="mb-0 text-muted small">ID: {{ booking.id|stringformat:"s"|truncatechars:13 }}</p>
                                     </div>
                                 </div>
                             </td>
-                            <td><span class="fw-bold">406-3</span></td>
+                            <td><span class="fw-bold {% if booking.status == 'REJECTED' or booking.status == 'CANCELLED' %}text-muted{% endif %}">{{ booking.room.code }}</span></td>
                             <td>
-                                <p class="mb-0 small fw-bold">22 เม.ย. 2026</p>
-                                <p class="mb-0 small text-muted"><i class="fa-regular fa-clock me-1"></i> 09:00 - 12:00</p>
-                            </td>
-                            <td><span class="badge badge-approved rounded-pill px-3 shadow-sm">อนุมัติแล้ว</span></td>
-                            <td class="px-4 text-end">
-                                <button class="btn btn-sm btn-outline-danger" hx-confirm="คุณแน่ใจหรือไม่ที่จะยกเลิกรายการนี้?">
-                                    <i class="fa-regular fa-circle-xmark me-1"></i> ยกเลิก
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="px-4">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="bg-warning bg-opacity-10 p-2 rounded text-warning">
-                                        <i class="fa-solid fa-users"></i>
-                                    </div>
-                                    <div>
-                                        <p class="mb-0 fw-bold">ประชุมภาควิชา</p>
-                                        <p class="mb-0 text-muted small">ID: BK-2026-005</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="fw-bold">408-1</span></td>
-                            <td>
-                                <p class="mb-0 small fw-bold">24 เม.ย. 2026</p>
-                                <p class="mb-0 small text-muted"><i class="fa-regular fa-clock me-1"></i> 13:30 - 15:30</p>
-                            </td>
-                            <td><span class="badge badge-pending rounded-pill px-3 shadow-sm" style="background-color: var(--tu-gold);">รออนุมัติ</span></td>
-                            <td class="px-4 text-end">
-                                <button class="btn btn-sm btn-outline-danger">
-                                    <i class="fa-regular fa-circle-xmark me-1"></i> ยกเลิก
-                                </button>
-                            </td>
-                        </tr>
-                        <tr class="opacity-75 bg-light">
-                            <td class="px-4">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="bg-secondary bg-opacity-10 p-2 rounded text-secondary">
-                                        <i class="fa-solid fa-chalkboard-user"></i>
-                                    </div>
-                                    <div>
-                                        <p class="mb-0 fw-bold">จัดติวพิเศษ (SF220)</p>
-                                        <p class="mb-0 text-muted small">ID: BK-2026-008</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="fw-bold text-muted">406-5</span></td>
-                            <td>
-                                <p class="mb-0 small fw-bold">25 เม.ย. 2026</p>
-                                <p class="mb-0 small text-muted"><i class="fa-regular fa-clock me-1"></i> 16:00 - 18:00</p>
+                                <p class="mb-0 small fw-bold">{{ booking.start_date }}</p>
+                                <p class="mb-0 small text-muted"><i class="fa-regular fa-clock me-1"></i> {{ booking.start_time|time:"H:i" }} - {{ booking.end_time|time:"H:i" }}</p>
                             </td>
                             <td>
-                                <span class="badge badge-cancelled rounded-pill px-3 shadow-sm">ถูกปฏิเสธ</span>
-                                <i class="fa-solid fa-circle-question ms-1 text-muted" data-bs-toggle="tooltip" title="เหตุผล: ห้องถูกจองโดยเตรียมงานวันเปิดหอพัก"></i>
+                                {% if booking.status == 'PENDING' %}
+                                    <span class="ece-badge pending">รออนุมัติ</span>
+                                {% elif booking.status == 'APPROVED' %}
+                                    <span class="ece-badge approved">อนุมัติแล้ว</span>
+                                {% elif booking.status == 'REJECTED' %}
+                                    <span class="ece-badge cancelled">ถูกปฏิเสธ</span>
+                                {% elif booking.status == 'CANCELLED' %}
+                                    <span class="ece-badge cancelled">ยกเลิกแล้ว</span>
+                                {% endif %}
                             </td>
                             <td class="px-4 text-end">
+                                {% if booking.status == 'PENDING' or booking.status == 'APPROVED' %}
+                                <form method="post" action="{% url 'booking:cancel_booking' booking.id %}" onsubmit="return confirm('ยืนยันการยกเลิกการจองนี้?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="ece-btn-outline-danger btn-sm"><i class="fa-regular fa-circle-xmark me-1"></i> ยกเลิก</button>
+                                </form>
+                                {% else %}
                                 <button class="btn btn-sm btn-light disabled">ไม่สามารถยกเลิกได้</button>
+                                {% endif %}
                             </td>
                         </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>
+                                ไม่พบรายการจอง{% if status_filter or search_query %}ที่ตรงกับเงื่อนไข{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
-            <div class="card-footer bg-white py-3 border-top d-flex justify-content-between align-items-center">
-                <span class="small text-muted">แสดง 1-3 จากทั้งหมด 3 รายการ</span>
-                <nav>
-                    <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item disabled"><a class="page-link" href="#">ก่อนหน้า</a></li>
-                        <li class="page-item active"><a class="page-link" href="#" style="background-color: var(--tu-red); border-color: var(--tu-red);">1</a></li>
-                        <li class="page-item disabled"><a class="page-link" href="#">ถัดไป</a></li>
-                    </ul>
-                </nav>
+            <div class="ece-card-footer">
+                <span class="small text-muted">แสดง {{ bookings|length }} รายการ</span>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-          return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
+        document.addEventListener('DOMContentLoaded', function () {
+            const c = document.getElementById('toast-container');
+            if (c) { setTimeout(function () { c.classList.add('home-toast-hide'); setTimeout(function () { c.remove(); }, 500); }, 3000); }
+        });
     </script>
 </body>
 </html>

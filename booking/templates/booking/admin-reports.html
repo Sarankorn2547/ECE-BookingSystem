@@ -1,27 +1,18 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายงานและสถิติ - ระบบจองห้องประชุม TU</title>
-    
-    <!-- Google Fonts -->
+    <title>รายงานและสถิติ - ระบบจองห้องประชุม ECE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
-    
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js 4 -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Custom Styles -->
-    <link rel="stylesheet" href="styles.css">
-    <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="{% static 'booking/styles.css' %}">
 </head>
-<body hx-boost="true">
+<body>
 
     <!-- Sidebar -->
     <div class="sidebar">
@@ -32,264 +23,190 @@
             <h5 class="mb-0 fw-bold small text-white">ROOM BOOKING</h5>
             <p class="small opacity-75 mb-0" style="font-size: 0.7rem;">DEPT. OF ELECTRICAL & COMPUTER ENG.</p>
         </div>
-
         <nav class="nav flex-column">
             <div class="px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Menu</div>
-            <a class="nav-link" href="dashboard.html">
-                <i class="fa-solid fa-house"></i> Dashboard
-            </a>
-            <a class="nav-link" href="booking-form.html">
-                <i class="fa-solid fa-calendar-plus"></i> จองห้อง
-            </a>
-            <a class="nav-link" href="my-bookings.html">
-                <i class="fa-solid fa-list-check"></i> การจองของฉัน
-            </a>
-            <a class="nav-link" href="calendar.html">
-                <i class="fa-solid fa-calendar-days"></i> ปฏิทินห้อง
-            </a>
-
+            <a class="nav-link" href="{% url 'booking:dashboard' %}"><i class="fa-solid fa-house"></i> Dashboard</a>
+            <a class="nav-link" href="{% url 'booking:booking_form' %}"><i class="fa-solid fa-calendar-plus"></i> จองห้อง</a>
+            <a class="nav-link" href="{% url 'booking:my_bookings' %}"><i class="fa-solid fa-list-check"></i> การจองของฉัน</a>
+            <a class="nav-link" href="{% url 'booking:calendar' %}"><i class="fa-solid fa-calendar-days"></i> ปฏิทินห้อง</a>
             <div class="mt-4 px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Admin</div>
-            <a class="nav-link" href="admin-approvals.html">
-                <i class="fa-solid fa-clipboard-check"></i> อนุมัติการจอง
-            </a>
-            <a class="nav-link active" href="admin-reports.html">
-                <i class="fa-solid fa-chart-pie"></i> รายงาน
-            </a>
-            <a class="nav-link" href="admin-system.html">
-                <i class="fa-solid fa-gears"></i> จัดการระบบ
-            </a>
-
+            <a class="nav-link" href="{% url 'booking:approval_queue' %}"><i class="fa-solid fa-clipboard-check"></i> อนุมัติการจอง</a>
+            <a class="nav-link active" href="{% url 'booking:admin_reports' %}"><i class="fa-solid fa-chart-pie"></i> รายงาน</a>
+            <a class="nav-link" href="{% url 'booking:admin_system' %}"><i class="fa-solid fa-gears"></i> จัดการระบบ</a>
             <div class="mt-auto pt-4 border-top border-white border-opacity-10">
-                <a class="nav-link text-white-50" href="login.html">
-                    <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
-                </a>
+                <a class="nav-link text-white-50" href="{% url 'booking:logout' %}"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
         </nav>
     </div>
 
     <!-- Main Content -->
     <div class="main-content">
-        <!-- Top Header -->
         <header class="top-header rounded-4 mb-4 shadow-sm">
             <h4 class="mb-0 fw-bold">รายงาน (Reports)</h4>
             <div class="d-flex align-items-center gap-3">
                 <div class="text-end d-none d-md-block">
-                    <p class="mb-0 fw-bold small">เจ้าหน้าที่ ทดสอบ</p>
-                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Admin • Department Staff</p>
+                    <p class="mb-0 fw-bold small">{{ display_name }}</p>
+                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Admin</p>
                 </div>
                 <div class="bg-light rounded-circle p-2 border">
-                    <i class="fa-solid fa-user-gear fa-lg text-tu-red" style="color: var(--tu-red);"></i>
+                    <i class="fa-solid fa-user-gear fa-lg" style="color: var(--tu-red);"></i>
                 </div>
             </div>
         </header>
 
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-            <div class="d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-pill border shadow-sm">
-                <i class="fa-regular fa-calendar text-muted ms-1"></i>
-                <span class="fw-bold small text-dark mx-2">1 เม.ย. 2026 - 30 เม.ย. 2026</span>
-                <button class="btn btn-sm btn-light rounded-circle"><i class="fa-solid fa-chevron-down small"></i></button>
-            </div>
-            <div class="d-flex gap-2">
-                <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">
-                    <i class="fa-solid fa-file-excel me-1"></i> ส่งออก CSV
-                </button>
-            </div>
+        <!-- Filter Form -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+            <form method="GET" action="{% url 'booking:admin_reports' %}" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-muted small"><i class="fa-solid fa-calendar me-1"></i> ตั้งแต่วันที่</label>
+                    <input type="date" name="start_date" class="form-control ece-form-input m-0" value="{{ start_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-muted small"><i class="fa-solid fa-calendar me-1"></i> ถึงวันที่</label>
+                    <input type="date" name="end_date" class="form-control ece-form-input m-0" value="{{ end_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="ece-btn-primary w-100 fw-bold py-2 justify-content-center">
+                        <i class="fa-solid fa-filter me-2"></i>กรองข้อมูล
+                    </button>
+                    <a href="{% url 'booking:admin_reports_export' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="btn btn-success fw-bold py-2 text-nowrap d-inline-flex align-items-center justify-content-center">
+                        <i class="fa-solid fa-file-csv me-2"></i>Export CSV
+                    </a>
+                </div>
+            </form>
         </div>
 
+        <!-- Summary Cards -->
         <div class="row g-4 mb-4">
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm p-4 text-white rounded-4 overflow-hidden position-relative" style="background: linear-gradient(135deg, var(--tu-red), var(--tu-red-dark));">
-                    <div class="position-absolute end-0 bottom-0 p-3 opacity-25">
-                        <i class="fa-solid fa-clipboard-list fa-4x"></i>
-                    </div>
-                    <p class="small text-uppercase fw-bold opacity-75 mb-1">การจองทั้งหมด</p>
-                    <h2 class="fw-black mb-0">54 <span class="h6 opacity-75">ครั้ง</span></h2>
-                    <p class="small mt-2 mb-0"><i class="fa-solid fa-arrow-up me-1"></i> +12% จากเดือนก่อน</p>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+                    <div class="fs-2 fw-bold" style="color: var(--tu-red);">{{ total_bookings }}</div>
+                    <div class="small text-muted">คำขอทั้งหมดในช่วงเวลา</div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm p-4 bg-white rounded-4 border-start border-4 border-primary">
-                    <p class="small text-uppercase fw-bold text-muted mb-1">ชั่วโมงใช้งานรวม</p>
-                    <h2 class="fw-black mb-0 text-dark">135 <span class="h6 text-muted">ชม.</span></h2>
-                    <p class="small mt-2 mb-0 text-primary"><i class="fa-solid fa-clock me-1"></i> เฉลี่ย 4.5 ชม. / วัน</p>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+                    <div class="fs-2 fw-bold text-warning">{{ pending_count }}</div>
+                    <div class="small text-muted">รออนุมัติ</div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm p-4 bg-white rounded-4 border-start border-4 border-warning">
-                    <p class="small text-uppercase fw-bold text-muted mb-1">ห้องที่ใช้บ่อยสุด</p>
-                    <h2 class="fw-black mb-0 text-dark">406-3</h2>
-                    <p class="small mt-2 mb-0 text-warning"><i class="fa-solid fa-star me-1"></i> อัตราใช้งาน 75%</p>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+                    <div class="fs-2 fw-bold text-success">{{ approved_count }}</div>
+                    <div class="small text-muted">อนุมัติแล้ว</div>
                 </div>
             </div>
-        </div>
-
-        <div class="row g-4 mb-4">
-            <div class="col-lg-7">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white py-3">
-                        <h6 class="mb-0 fw-bold"><i class="fa-solid fa-chart-column me-2 text-tu-red"></i> ความถี่ในการใช้งานรายห้อง (Room Utilization)</h6>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="usageChart" height="280"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-5">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white py-3">
-                        <h6 class="mb-0 fw-bold"><i class="fa-solid fa-chart-pie me-2 text-warning"></i> สัดส่วนประเภทการใช้งาน</h6>
-                    </div>
-                    <div class="card-body d-flex align-items-center">
-                        <canvas id="purposeChart"></canvas>
-                    </div>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+                    <div class="fs-2 fw-bold text-danger">{{ rejected_count }}</div>
+                    <div class="small text-muted">ปฏิเสธ / ยกเลิก</div>
                 </div>
             </div>
         </div>
 
-        <div class="card border-0 shadow-sm overflow-hidden">
-            <div class="card-header bg-white py-3">
-                <h6 class="mb-0 fw-bold">สรุปข้อมูลเชิงตัวเลข (Summary Table)</h6>
+        <!-- Room Usage & Utilization Table -->
+        <div class="card border-0 shadow-sm overflow-hidden mb-4 rounded-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-chart-bar me-2 text-muted"></i> ตารางอัตราการใช้งานแต่ละห้อง (เฉพาะที่อนุมัติแล้ว)</h6>
+                <span class="badge bg-light text-dark border fw-normal">วันทำงานช่วงที่กรอง: {{ weekdays_count }} วัน</span>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-light text-muted small text-uppercase fw-bold">
                         <tr>
-                            <th class="px-4 py-3 border-0">ห้อง (Room)</th>
-                            <th class="py-3 border-0 text-center">จำนวนการจอง</th>
-                            <th class="py-3 border-0 text-center">ชั่วโมงใช้งาน</th>
-                            <th class="px-4 py-3 border-0 text-end">อัตราการใช้งาน</th>
+                            <th class="px-4 py-3 border-0">รหัสห้อง</th>
+                            <th class="py-3 border-0">ชื่อห้อง</th>
+                            <th class="py-3 border-0 text-center">จำนวนครั้งที่จอง</th>
+                            <th class="py-3 border-0 text-center">ชั่วโมงการใช้งาน</th>
+                            <th class="py-3 border-0 text-end px-4">อัตราการใช้งาน (Utilization)</th>
                         </tr>
                     </thead>
                     <tbody>
+                        {% for row in room_stats %}
                         <tr>
-                            <td class="px-4"><span class="fw-bold">406-3</span></td>
-                            <td class="text-center">15</td>
-                            <td class="text-center">45</td>
+                            <td class="px-4 fw-bold">{{ row.room.code }}</td>
+                            <td>{{ row.room.name }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary rounded-pill px-3 py-1">{{ row.count }} ครั้ง</span>
+                            </td>
+                            <td class="text-center fw-bold text-dark">{{ row.hours }} ชม.</td>
                             <td class="px-4 text-end">
-                                <div class="d-flex align-items-center justify-content-end gap-3">
-                                    <span class="small fw-bold">75%</span>
+                                <div class="d-inline-flex align-items-center justify-content-end gap-2 w-100">
                                     <div class="progress" style="width: 100px; height: 8px;">
-                                        <div class="progress-bar" style="width: 75%; background-color: var(--tu-red);"></div>
+                                        <div class="progress-bar" role="progressbar" data-width="{{ row.utilization }}" style="background-color: var(--tu-red);" aria-valuenow="{{ row.utilization }}" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
+                                    <span class="fw-bold text-danger" style="min-width: 50px;">{{ row.utilization }}%</span>
                                 </div>
                             </td>
                         </tr>
+                        {% empty %}
                         <tr>
-                            <td class="px-4"><span class="fw-bold">406-5</span></td>
-                            <td class="text-center">10</td>
-                            <td class="text-center">20</td>
-                            <td class="px-4 text-end">
-                                <div class="d-flex align-items-center justify-content-end gap-3">
-                                    <span class="small fw-bold">33%</span>
-                                    <div class="progress" style="width: 100px; height: 8px;">
-                                        <div class="progress-bar" style="width: 33%; background-color: var(--tu-red);"></div>
-                                    </div>
-                                </div>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-chart-simple fa-2x mb-2 d-block"></i>
+                                ยังไม่มีข้อมูลการใช้งานในช่วงเวลานี้
                             </td>
                         </tr>
-                        <tr>
-                            <td class="px-4"><span class="fw-bold">408-1</span></td>
-                            <td class="text-center">8</td>
-                            <td class="text-center">15</td>
-                            <td class="px-4 text-end">
-                                <div class="d-flex align-items-center justify-content-end gap-3">
-                                    <span class="small fw-bold">25%</span>
-                                    <div class="progress" style="width: 100px; height: 8px;">
-                                        <div class="progress-bar" style="width: 25%; background-color: var(--tu-red);"></div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="px-4"><span class="fw-bold">408-2/1</span></td>
-                            <td class="text-center">12</td>
-                            <td class="text-center">30</td>
-                            <td class="px-4 text-end">
-                                <div class="d-flex align-items-center justify-content-end gap-3">
-                                    <span class="small fw-bold">50%</span>
-                                    <div class="progress" style="width: 100px; height: 8px;">
-                                        <div class="progress-bar" style="width: 50%; background-color: var(--tu-red);"></div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="px-4"><span class="fw-bold">408-2/2</span></td>
-                            <td class="text-center">9</td>
-                            <td class="text-center">25</td>
-                            <td class="px-4 text-end">
-                                <div class="d-flex align-items-center justify-content-end gap-3">
-                                    <span class="small fw-bold">42%</span>
-                                    <div class="progress" style="width: 100px; height: 8px;">
-                                        <div class="progress-bar" style="width: 42%; background-color: var(--tu-red);"></div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <!-- Statistics Grouped by Purpose and Program -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h6 class="mb-0 fw-bold"><i class="fa-solid fa-graduation-cap me-2 text-muted"></i> แยกตามวัตถุประสงค์ (Purpose)</h6>
+                    </div>
+                    <div class="card-body py-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-muted"><i class="fa-solid fa-circle-play me-2 text-primary small"></i>สอนปกติ / ชดเชย / เสริม</span>
+                            <span class="fw-bold fs-5 text-dark">{{ purpose_stats.COURSE }} ครั้ง</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted"><i class="fa-solid fa-circle-play me-2 text-warning small"></i>จัดอบรม / จัดติว</span>
+                            <span class="fw-bold fs-5 text-dark">{{ purpose_stats.TRAINING }} ครั้ง</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h6 class="mb-0 fw-bold"><i class="fa-solid fa-school me-2 text-muted"></i> แยกตามหลักสูตร (Program)</h6>
+                    </div>
+                    <div class="card-body py-4">
+                        <div class="row g-3">
+                            <div class="col-6 mb-2">
+                                <div class="text-muted small">ปริญญาตรีภาคปกติ</div>
+                                <div class="fw-bold fs-5 text-dark">{{ program_stats.BACHELOR }} ครั้ง</div>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <div class="text-muted small">ปริญญาโท</div>
+                                <div class="fw-bold fs-5 text-dark">{{ program_stats.MASTER }} ครั้ง</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small">TEP-TEPE</div>
+                                <div class="fw-bold fs-5 text-dark">{{ program_stats.TEP_TEPE }} ครั้ง</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small">TU-PINE</div>
+                                <div class="fw-bold fs-5 text-dark">{{ program_stats.TU_PINE }} ครั้ง</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
     <script>
-        const usageCtx = document.getElementById('usageChart').getContext('2d');
-        new Chart(usageCtx, {
-            type: 'bar',
-            data: {
-                labels: ['406-3', '406-5', '408-1', '408-2/1', '408-2/2'],
-                datasets: [{
-                    label: 'ชั่วโมงใช้งาน',
-                    data: [45, 20, 15, 30, 25],
-                    backgroundColor: '#8c181c',
-                    borderRadius: 8,
-                    barThickness: 30
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { display: false }
-                    },
-                    x: {
-                        grid: { display: false }
-                    }
-                }
-            }
-        });
-
-        const purposeCtx = document.getElementById('purposeChart').getContext('2d');
-        new Chart(purposeCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['สอนปกติ', 'สอนชดเชย', 'จัดสอบ', 'จัดติว', 'ประชุม'],
-                datasets: [{
-                    data: [65, 15, 10, 5, 5],
-                    backgroundColor: ['#8c181c', '#ffcf50', '#1a1714', '#4a90e2', '#50e3c2'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            usePointStyle: true,
-                            padding: 20,
-                            font: { size: 12, family: 'Sarabun' }
-                        }
-                    }
-                },
-                cutout: '70%'
+        document.querySelectorAll('.progress-bar').forEach(function(bar) {
+            var w = bar.getAttribute('data-width');
+            if (w) {
+                bar.style.width = w + '%';
             }
         });
     </script>

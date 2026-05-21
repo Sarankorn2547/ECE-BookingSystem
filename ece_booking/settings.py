@@ -53,16 +53,35 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "ece_booking.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", "ece_booking"),
-        "USER": os.getenv("POSTGRES_USER", "postgres"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", ""),
-        "HOST": os.getenv("SQL_HOST", "db"),
-        "PORT": os.getenv("SQL_PORT", "5432"),
+# Try importing postgres adapter, fallback to sqlite3 if not present and SQL_HOST not set (local dev environment)
+try:
+    import psycopg
+    has_postgres_adapter = True
+except ImportError:
+    try:
+        import psycopg2
+        has_postgres_adapter = True
+    except ImportError:
+        has_postgres_adapter = False
+
+if not has_postgres_adapter:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("POSTGRES_DB", "postgres"),
+            "USER": os.getenv("POSTGRES_USER", "postgres"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
+            "HOST": os.getenv("SQL_HOST", "db"),
+            "PORT": os.getenv("SQL_PORT", "5432"),
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

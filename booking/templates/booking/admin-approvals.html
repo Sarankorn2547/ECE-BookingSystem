@@ -1,25 +1,18 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>อนุมัติการจอง - ระบบจองห้องประชุม TU</title>
-    
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
-    
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom Styles -->
-    <link rel="stylesheet" href="styles.css">
-    <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="{% static 'booking/styles.css' %}">
 </head>
-<body hx-boost="true">
+<body>
 
     <!-- Sidebar -->
     <div class="sidebar">
@@ -30,85 +23,67 @@
             <h5 class="mb-0 fw-bold small text-white">ROOM BOOKING</h5>
             <p class="small opacity-75 mb-0" style="font-size: 0.7rem;">DEPT. OF ELECTRICAL & COMPUTER ENG.</p>
         </div>
-
         <nav class="nav flex-column">
             <div class="px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Menu</div>
-            <a class="nav-link" href="dashboard.html">
-                <i class="fa-solid fa-house"></i> Dashboard
-            </a>
-            <a class="nav-link" href="booking-form.html">
-                <i class="fa-solid fa-calendar-plus"></i> จองห้อง
-            </a>
-            <a class="nav-link" href="my-bookings.html">
-                <i class="fa-solid fa-list-check"></i> การจองของฉัน
-            </a>
-            <a class="nav-link" href="calendar.html">
-                <i class="fa-solid fa-calendar-days"></i> ปฏิทินห้อง
-            </a>
-
+            <a class="nav-link" href="{% url 'booking:dashboard' %}"><i class="fa-solid fa-house"></i> Dashboard</a>
+            <a class="nav-link" href="{% url 'booking:booking_form' %}"><i class="fa-solid fa-calendar-plus"></i> จองห้อง</a>
+            <a class="nav-link" href="{% url 'booking:my_bookings' %}"><i class="fa-solid fa-list-check"></i> การจองของฉัน</a>
+            <a class="nav-link" href="{% url 'booking:calendar' %}"><i class="fa-solid fa-calendar-days"></i> ปฏิทินห้อง</a>
             <div class="mt-4 px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Admin</div>
-            <a class="nav-link active" href="admin-approvals.html">
-                <i class="fa-solid fa-clipboard-check"></i> อนุมัติการจอง
-            </a>
-            <a class="nav-link" href="admin-reports.html">
-                <i class="fa-solid fa-chart-pie"></i> รายงาน
-            </a>
-            <a class="nav-link" href="admin-system.html">
-                <i class="fa-solid fa-gears"></i> จัดการระบบ
-            </a>
-
+            <a class="nav-link active" href="{% url 'booking:approval_queue' %}"><i class="fa-solid fa-clipboard-check"></i> อนุมัติการจอง</a>
+            <a class="nav-link" href="{% url 'booking:admin_reports' %}"><i class="fa-solid fa-chart-pie"></i> รายงาน</a>
+            <a class="nav-link" href="{% url 'booking:admin_system' %}"><i class="fa-solid fa-gears"></i> จัดการระบบ</a>
             <div class="mt-auto pt-4 border-top border-white border-opacity-10">
-                <a class="nav-link text-white-50" href="login.html">
-                    <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
-                </a>
+                <a class="nav-link text-white-50" href="{% url 'booking:logout' %}"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
         </nav>
     </div>
 
     <!-- Main Content -->
     <div class="main-content">
-        <!-- Top Header -->
         <header class="top-header rounded-4 mb-4 shadow-sm">
             <h4 class="mb-0 fw-bold">อนุมัติการจอง (Approvals)</h4>
             <div class="d-flex align-items-center gap-3">
                 <div class="text-end d-none d-md-block">
-                    <p class="mb-0 fw-bold small">เจ้าหน้าที่ ทดสอบ</p>
-                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Admin • Department Staff</p>
+                    <p class="mb-0 fw-bold small">{{ display_name }}</p>
+                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Admin</p>
                 </div>
                 <div class="bg-light rounded-circle p-2 border">
-                    <i class="fa-solid fa-user-gear fa-lg text-tu-red" style="color: var(--tu-red);"></i>
+                    <i class="fa-solid fa-user-gear fa-lg" style="color: var(--tu-red);"></i>
                 </div>
             </div>
         </header>
 
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-            <div class="d-flex align-items-center gap-3">
-                <div class="bg-warning-subtle text-warning-emphasis border border-warning px-4 py-2 rounded-pill fw-bold shadow-sm small d-flex align-items-center gap-2">
-                    <span class="position-relative d-flex" style="width: 10px; height: 10px;">
-                        <span class="animate-ping position-absolute h-100 w-100 rounded-circle bg-warning opacity-75"></span>
-                        <span class="position-relative rounded-circle bg-warning" style="width: 10px; height: 10px;"></span>
-                    </span>
-                    มี 3 รายการรออนุมัติ
-                </div>
+        {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-            <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary rounded-pill px-4 fw-bold shadow-sm small">
-                    อนุมัติรายการที่เลือก
-                </button>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div class="bg-warning-subtle text-warning-emphasis border border-warning px-4 py-2 rounded-pill fw-bold shadow-sm small d-flex align-items-center gap-2">
+                <span class="position-relative d-flex" style="width: 10px; height: 10px;">
+                    <span class="animate-ping position-absolute h-100 w-100 rounded-circle bg-warning opacity-75"></span>
+                    <span class="position-relative rounded-circle bg-warning" style="width: 10px; height: 10px;"></span>
+                </span>
+                มี {{ pending_count }} รายการรออนุมัติ
             </div>
         </div>
 
         <div class="card border-0 shadow-sm overflow-hidden">
-            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <div class="card-header bg-white py-3 border-bottom">
                 <h6 class="mb-0 fw-bold"><i class="fa-solid fa-file-invoice me-2 text-muted"></i> รายการคำขอ (Pending Requests)</h6>
-                <div class="small text-muted">เลือกทั้งหมด <input type="checkbox" class="ms-1"></div>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-light text-muted small text-uppercase fw-bold">
                         <tr>
-                            <th class="px-4 py-3 border-0 w-10"></th>
-                            <th class="py-3 border-0">ผู้จอง (Booker)</th>
+                            <th class="px-4 py-3 border-0">ผู้จอง</th>
                             <th class="py-3 border-0">ห้อง</th>
                             <th class="py-3 border-0">รายละเอียด</th>
                             <th class="py-3 border-0">วัน และ เวลา</th>
@@ -116,105 +91,67 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% for booking in bookings %}
                         <tr>
-                            <td class="px-4"><input type="checkbox"></td>
-                            <td>
+                            <td class="px-4">
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="bg-primary bg-opacity-10 p-2 rounded-circle text-primary">
                                         <i class="fa-solid fa-user-tie"></i>
                                     </div>
                                     <div>
-                                        <p class="mb-0 fw-bold">อ.ดร. สมชาย ใจดี</p>
-                                        <p class="mb-0 text-muted small">ID: REQ-101</p>
+                                        <p class="mb-0 fw-bold">{{ booking.booker_name|default:booking.booker_id }}</p>
+                                        <p class="mb-0 text-muted small">{{ booking.booker_id }}</p>
                                     </div>
                                 </div>
                             </td>
-                            <td><span class="fw-bold">408-1</span></td>
+                            <td><span class="fw-bold">{{ booking.room.code }}</span></td>
                             <td>
-                                <p class="mb-0 fw-bold">ประชุมภาควิชา</p>
-                                <p class="mb-0 text-muted small">วาระประเมินผลการเรียน</p>
+                                {% if booking.purpose_type == 'COURSE' %}
+                                <p class="mb-0 fw-bold">{{ booking.course_code }} {{ booking.course_name }}</p>
+                                <p class="mb-0 text-muted small">การเรียนการสอน</p>
+                                {% else %}
+                                <p class="mb-0 fw-bold">{{ booking.training_title }}</p>
+                                <p class="mb-0 text-muted small">การฝึกอบรม</p>
+                                {% endif %}
+                                {% if booking.notes %}
+                                <p class="mb-0 text-muted small fst-italic">{{ booking.notes }}</p>
+                                {% endif %}
                             </td>
                             <td>
-                                <p class="mb-0 small fw-bold">24 เม.ย. 2026</p>
-                                <p class="mb-0 small text-muted">13:30 - 15:30</p>
+                                <p class="mb-0 small fw-bold">{{ booking.start_date|date:"d M Y" }}</p>
+                                <p class="mb-0 small text-muted">{{ booking.start_time|time:"H:i" }} - {{ booking.end_time|time:"H:i" }}</p>
+                                {% if booking.days_of_week %}
+                                <p class="mb-0 small text-muted">ทุกสัปดาห์</p>
+                                {% endif %}
                             </td>
                             <td class="px-4 text-end">
                                 <div class="d-flex justify-content-end gap-2">
-                                    <button class="btn btn-sm btn-success px-3 fw-bold" hx-confirm="อนุมัติคำขอนี้?">
-                                        <i class="fa-solid fa-check me-1"></i> อนุมัติ
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                                    <form method="POST" action="{% url 'booking:approve' booking.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-success px-3 fw-bold"
+                                            onclick="return confirm('อนุมัติคำขอของ {{ booking.booker_name|default:booking.booker_id }}?')">
+                                            <i class="fa-solid fa-check me-1"></i> อนุมัติ
+                                        </button>
+                                    </form>
+                                    <button class="btn btn-sm btn-outline-danger px-3 fw-bold"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#rejectModal"
+                                        data-booking-id="{{ booking.id }}"
+                                        data-reject-url="{% url 'booking:reject' booking.id %}"
+                                        data-booker-name="{{ booking.booker_name|default:booking.booker_id }}">
                                         <i class="fa-solid fa-xmark me-1"></i> ปฏิเสธ
                                     </button>
                                 </div>
                             </td>
                         </tr>
+                        {% empty %}
                         <tr>
-                            <td class="px-4"><input type="checkbox"></td>
-                            <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="bg-primary bg-opacity-10 p-2 rounded-circle text-primary">
-                                        <i class="fa-solid fa-user-tie"></i>
-                                    </div>
-                                    <div>
-                                        <p class="mb-0 fw-bold">ผศ.ดร. วิทยา เก่งมาก</p>
-                                        <p class="mb-0 text-muted small">ID: REQ-102</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="fw-bold">406-3</span></td>
-                            <td>
-                                <p class="mb-0 fw-bold">สอบชดเชย SF220</p>
-                                <p class="mb-0 text-muted small">หลักสูตรปกติ • ปี 2</p>
-                            </td>
-                            <td>
-                                <p class="mb-0 small fw-bold">25 เม.ย. 2026</p>
-                                <p class="mb-0 small text-muted">09:00 - 12:00</p>
-                            </td>
-                            <td class="px-4 text-end">
-                                <div class="d-flex justify-content-end gap-2">
-                                    <button class="btn btn-sm btn-success px-3 fw-bold">
-                                        <i class="fa-solid fa-check me-1"></i> อนุมัติ
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#rejectModal">
-                                        <i class="fa-solid fa-xmark me-1"></i> ปฏิเสธ
-                                    </button>
-                                </div>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-clipboard-check fa-2x mb-2 d-block"></i>
+                                ไม่มีรายการรออนุมัติ
                             </td>
                         </tr>
-                        <tr>
-                            <td class="px-4"><input type="checkbox"></td>
-                            <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="bg-primary bg-opacity-10 p-2 rounded-circle text-primary">
-                                        <i class="fa-solid fa-user-tie"></i>
-                                    </div>
-                                    <div>
-                                        <p class="mb-0 fw-bold">รศ.ดร. มานี มีวิชา</p>
-                                        <p class="mb-0 text-muted small">ID: REQ-103</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="fw-bold">408-2/2</span></td>
-                            <td>
-                                <p class="mb-0 fw-bold">จัดติวพิเศษโครงงาน</p>
-                                <p class="mb-0 text-muted small">หลักสูตร TEP-TEPE</p>
-                            </td>
-                            <td>
-                                <p class="mb-0 small fw-bold">26 เม.ย. 2026</p>
-                                <p class="mb-0 small text-muted">16:00 - 18:00</p>
-                            </td>
-                            <td class="px-4 text-end">
-                                <div class="d-flex justify-content-end gap-2">
-                                    <button class="btn btn-sm btn-success px-3 fw-bold">
-                                        <i class="fa-solid fa-check me-1"></i> อนุมัติ
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#rejectModal">
-                                        <i class="fa-solid fa-xmark me-1"></i> ปฏิเสธ
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -229,21 +166,35 @@
                     <h5 class="modal-title fw-bold text-danger d-flex align-items-center gap-2">
                         <i class="fa-solid fa-circle-xmark"></i> ปฏิเสธการจอง
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body p-4">
-                    <p class="text-muted small mb-3">กรุณาระบุเหตุผลในการปฏิเสธคำขอจอง เพื่อแจ้งให้ผู้จองทราบผ่านอีเมล:</p>
-                    <textarea class="form-control rounded-3 border-2 bg-light shadow-inner" rows="4" placeholder="เช่น ห้องมีการใช้งานแล้ว, ไม่ตรงตามวัตถุประสงค์..."></textarea>
-                </div>
-                <div class="modal-footer border-0 p-4 pt-0">
-                    <button type="button" class="btn btn-link text-muted text-decoration-none fw-bold" data-bs-dismiss="modal">ยกเลิก</button>
-                    <button type="button" class="btn btn-danger px-4 fw-bold rounded-pill shadow-sm">ยืนยันการปฏิเสธ</button>
-                </div>
+                <form method="POST" id="rejectForm" action="">
+                    {% csrf_token %}
+                    <div class="modal-body p-4">
+                        <p class="text-muted small mb-3">กรุณาระบุเหตุผลในการปฏิเสธคำขอจอง:</p>
+                        <textarea name="reason" class="form-control rounded-3 border-2 bg-light" rows="4"
+                            placeholder="เช่น ห้องมีการใช้งานแล้ว, ไม่ตรงตามวัตถุประสงค์..."></textarea>
+                    </div>
+                    <div class="modal-footer border-0 p-4 pt-0">
+                        <button type="button" class="btn btn-link text-muted text-decoration-none fw-bold" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-danger px-4 fw-bold rounded-pill shadow-sm">ยืนยันการปฏิเสธ</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ตั้ง action ของ reject form ให้ตรงกับ booking ที่กดปุ่ม
+        document.getElementById('rejectModal').addEventListener('show.bs.modal', function (event) {
+            const btn = event.relatedTarget;
+            const bookingId = btn.getAttribute('data-booking-id');
+            const bookerName = btn.getAttribute('data-booker-name');
+            document.getElementById('rejectForm').action = btn.getAttribute('data-reject-url');
+            this.querySelector('.modal-title').innerHTML =
+                `<i class="fa-solid fa-circle-xmark"></i> ปฏิเสธการจองของ ${bookerName}`;
+        });
+    </script>
 </body>
 </html>
