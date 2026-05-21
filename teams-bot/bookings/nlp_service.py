@@ -3,92 +3,59 @@ import json
 import sys
 from openai import OpenAI
 from datetime import datetime
+import pytz
 from dotenv import load_dotenv
 
 load_dotenv()
 
+# Set Timezone
+TZ = pytz.timezone('Asia/Bangkok')
+
 api_key = os.getenv("TYPHOON_API_KEY")
-print(f"DEBUG: API Key exists: {bool(api_key)}", file=sys.stderr, flush=True)
 
 try:
     client = OpenAI(
         api_key=api_key,
         base_url="https://api.opentyphoon.ai/v1"
     )
-    print("DEBUG: Typhoon Client initialized successfully", file=sys.stderr, flush=True)
 except Exception as e:
-    print(f"DEBUG: Typhoon Client init FAILED: {str(e)}", file=sys.stderr, flush=True)
     client = None
 
 SYSTEM_PROMPT = """คุณเป็น booking assistant ของภาควิชา ECE หน้าที่ของคุณคือแปลงคำขอภาษาไทยเป็น JSON
+**ข้อมูลปัจจุบัน (สำคัญมาก):**
 วันนี้คือ: {current_date}
 
-การแปลงวันที่:
-- วันนี้ = today
-- พรุ่งนี้ = tomorrow
-- มะรืนนี้ / วันมะรื่นนี้ = day after tomorrow
-- วันจันทร์ / อังคาร / พุธ / พฤหัส / ศุกร์ / เสาร์ / อาทิตย์ = next occurrence of that weekday
+**หลักการคำนวณวันที่:**
+1. ใช้ "{current_date}" เป็นจุดตั้งต้นเสมอ
+2. "วันนี้" = วันที่ระบุข้างบน
+3. "พรุ่งนี้" = วันถัดไป
+4. "วันจันทร์/อังคาร/.../อาทิตย์" = ให้หาวันที่ของวันนั้นๆ ที่กำลังจะมาถึง (ถ้าวัดวันนี้ตรงกับวันที่ถาม ให้ถือว่าเป็นวันนี้)
+5. หากผู้ใช้ระบุวันที่ (เช่น วันที่ 20) แต่เดือนนั้นผ่านวันที่ 20 ไปแล้ว ให้สันนิษฐานว่าเป็น "วันที่ 20 ของเดือนถัดไป"
+6. หาก "วันในสัปดาห์" และ "วันที่" ขัดแย้งกัน (เช่น บอกวันศุกร์ที่ 20 แต่ปีนี้วันที่ 20 เป็นวันจันทร์) ให้ยึดตาม "วันที่" (20) เป็นหลัก แล้วคำนวณเดือน/ปีให้ถูกต้อง
 
-การแปลงเวลา (24 ชั่วโมง):
-- X โมงเช้า = 0X:00 (เช่น 9 โมง = 09:00)
-- บ่าย X โมง = 1X:00 (เช่น บ่าย 2 โมง = 14:00)
+**การแปลงเวลา (24 ชั่วโมง):**
+- X โมงเช้า = 0X:00
+- บ่าย X โมง = (X+12):00 (เช่น บ่าย 2 = 14:00)
 - X ทุ่ม = (X+18):00 (เช่น 1 ทุ่ม = 19:00)
-- เที่ยง = 12:00
+- เที่ยง = 12:00, เที่ยงคืน = 00:00
+- หากระบุช่วง (เช่น บ่ายโมงถึงสามโมง) = start: 13:00, end: 15:00
 
-Intent และ output format (ตอบเป็น JSON เท่านั้น ไม่มีข้อความอื่น):
-
-1. create_booking — ต้องการจองห้อง
-{{"intent": "create_booking", "room_id": "string", "date": "YYYY-MM-DD", "start_time": "HH:MM", "end_time": "HH:MM", "purpose": "string"}}
-
-2. check_availability — ถามว่าวันนั้นห้องไหนว่างบ้าง (ไม่ระบุห้อง)
-{{"intent": "check_availability", "date": "YYYY-MM-DD"}}
-
-3. check_room — ถามว่าห้องที่ระบุว่างช่วงไหน
-{{"intent": "check_room", "room_id": "string", "date": "YYYY-MM-DD"}}
-
-4. my_bookings — ดูการจองของตัวเอง
-{{"intent": "my_bookings"}}
-
-5. cancel_booking — ยกเลิกการจอง
-{{"intent": "cancel_booking", "room_id": "string", "date": "YYYY-MM-DD"}}
-
-6. help — ถามว่า bot ทำอะไรได้บ้าง
-{{"intent": "help"}}
-
-7. unknown — ไม่เข้าใจคำสั่ง
-{{"intent": "unknown"}}
-
-กฎ:
-- ถ้าไม่มี end_time ให้บวก 1 ชั่วโมงจาก start_time
-- room_id format: "406-3", "407-1", "408-2/1"
-- คำนวณวันที่จริง YYYY-MM-DD จากคำบอกวันที่สัมพัทธ์
-
-ตัวอย่าง:
-User: จองห้อง 406-3 พรุ่งนี้ 9 โมงถึง 10 โมง สอนวิชา CN332
-Output: {{"intent": "create_booking", "room_id": "406-3", "date": "YYYY-MM-DD", "start_time": "09:00", "end_time": "10:00", "purpose": "สอนวิชา CN332"}}
-
-User: วันมะรื่นนี้ห้องไหนว่างบ้าง
-Output: {{"intent": "check_availability", "date": "YYYY-MM-DD"}}
-
-User: ห้อง 406-3 พรุ่งนี้ว่างช่วงไหนบ้าง
-Output: {{"intent": "check_room", "room_id": "406-3", "date": "YYYY-MM-DD"}}
-
-User: ดูการจองของฉัน
-Output: {{"intent": "my_bookings"}}
-
-User: ยกเลิกการจองห้อง 406-3 พรุ่งนี้
-Output: {{"intent": "cancel_booking", "room_id": "406-3", "date": "YYYY-MM-DD"}}
-
-User: help
-Output: {{"intent": "help"}}
+**Output Format (JSON Only):**
+1. create_booking: {{"intent": "create_booking", "room_id": "string", "date": "YYYY-MM-DD", "start_time": "HH:MM", "end_time": "HH:MM", "purpose": "string"}}
+2. check_availability: {{"intent": "check_availability", "date": "YYYY-MM-DD"}}
+3. check_room: {{"intent": "check_room", "room_id": "string", "date": "YYYY-MM-DD"}}
+4. my_bookings: {{"intent": "my_bookings"}}
+5. cancel_booking: {{"intent": "cancel_booking", "room_id": "string", "date": "YYYY-MM-DD"}}
+6. help/unknown: ตามความเหมาะสม
 """
 
 def parse_booking_request(text):
-    print(f"DEBUG: Entering parse_booking_request with text: {text}", file=sys.stderr, flush=True)
     if not client:
         return {"intent": "unknown", "error": "Client not initialized"}
 
-    current_date = datetime.now().strftime("%Y-%m-%d (%A)")
+    # Use Asia/Bangkok time for AI context
+    now = datetime.now(TZ)
+    current_date = now.strftime("%Y-%m-%d (%A)")
 
     try:
         response = client.chat.completions.create(
@@ -97,12 +64,11 @@ def parse_booking_request(text):
                 {"role": "system", "content": SYSTEM_PROMPT.format(current_date=current_date)},
                 {"role": "user", "content": text},
             ],
-            temperature=0.1,
+            temperature=0.0, # ลดความสร้างสรรค์ เพิ่มความแม่นยำ
             max_tokens=256,
         )
         content = response.choices[0].message.content.strip()
-        print(f"DEBUG: Typhoon Response received: {content}", file=sys.stderr, flush=True)
-
+        
         if "```json" in content:
             content = content.split("```json")[1].split("```")[0].strip()
         elif "```" in content:
@@ -110,5 +76,4 @@ def parse_booking_request(text):
 
         return json.loads(content)
     except Exception as e:
-        print(f"DEBUG: EXCEPTION in parse: {str(e)}", file=sys.stderr, flush=True)
         return {"intent": "unknown"}

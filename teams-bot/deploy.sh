@@ -8,13 +8,17 @@ REMOTE_DIR="/root/room_booking_nlp"
 
 echo "🚀 Deploying to VPS: $VPS_IP:$VPS_PORT..."
 
-# Sync ONLY Backend folder to VPS
+# Go to script directory
+cd "$(dirname "$0")"
+
+# Sync teams-bot folder to VPS
 rsync -avz -e "ssh -p $VPS_PORT" \
     --exclude 'venv' \
     --exclude '__pycache__' \
     --exclude 'db.sqlite3' \
     --exclude '.git' \
-    ./Backend/ "$VPS_USER@$VPS_IP:$REMOTE_DIR"
+    --exclude '.env' \
+    ./ "$VPS_USER@$VPS_IP:$REMOTE_DIR"
 
 # Run docker-compose on VPS
 ssh -p $VPS_PORT "$VPS_USER@$VPS_IP" << EOF
