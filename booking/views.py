@@ -16,6 +16,12 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from .models import Booking, BlackoutPeriod, BookingLog, Room, UserProfile
+from .emails import (
+    notify_booking_created,
+    notify_booking_approved,
+    notify_booking_rejected,
+    notify_booking_cancelled,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -241,7 +247,7 @@ def booking_form_view(request):
             recurring_pattern = {"type": "weekly", "days_of_week": days_of_week} if days_of_week else None
 
             tu_profile = request.session.get("tu_profile", {})
-            Booking.objects.create(
+            new_booking = Booking.objects.create(
                 room=room,
                 booker_id=tu_profile.get("username", request.user.username),
                 booker_name=tu_profile.get("display_name_th", request.user.username),
@@ -258,6 +264,7 @@ def booking_form_view(request):
                 notes=notes,
                 status=Booking.Status.PENDING,
             )
+            notify_booking_created(new_booking)
             messages.success(request, "ส่งคำขอจองเรียบร้อยแล้ว กรุณารอการอนุมัติ")
             return redirect("booking:dashboard")
 
@@ -330,6 +337,7 @@ def cancel_booking_view(request, booking_id):
     booking.status = Booking.Status.CANCELLED
     booking.save()
     BookingLog.objects.create(booking=booking, action="CANCELLED", actor=booker_id)
+    notify_booking_cancelled(booking)
     messages.success(request, "ยกเลิกการจองเรียบร้อยแล้ว")
     return redirect("booking:my_bookings")
 
@@ -451,6 +459,7 @@ def approve_view(request, booking_id):
     booking.approval_at = timezone.now()
     booking.save()
     BookingLog.objects.create(booking=booking, action="APPROVED", actor=request.user.username)
+    notify_booking_approved(booking)
     messages.success(request, f"อนุมัติการจองของ {booking.booker_name or booking.booker_id} เรียบร้อยแล้ว")
     return redirect("booking:approval_queue")
 
@@ -471,6 +480,7 @@ def reject_view(request, booking_id):
         actor=request.user.username,
         metadata={"reason": reason},
     )
+    notify_booking_rejected(booking, reason)
     messages.success(request, f"ปฏิเสธการจองของ {booking.booker_name or booking.booker_id} เรียบร้อยแล้ว")
     return redirect("booking:approval_queue")
 

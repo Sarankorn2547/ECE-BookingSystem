@@ -111,12 +111,15 @@ Based on [SRS Document v1.0](https://wachira.ece.engr.tu.ac.th/share/webapp/SRS_
 - [x] Tab "สิทธิ์ผู้ใช้งาน" — แสดง UserProfile ทั้งหมด, เปลี่ยน role ผ่าน dropdown (submit ทันที)
 - [x] Tab "ปิดปรับปรุง / วันหยุด" — เพิ่ม/ลบ BlackoutPeriod จาก DB
 
-#### 🔲 Module 9 — Email Notifications (Not Started)
+#### ✅ Module 9 — Email Notifications (Done)
 
-- [ ] SMTP configuration (Gmail)
-- [ ] Email on booking created → Admin
-- [ ] Email on booking approved/rejected → Lecturer
-- [ ] Email on booking cancelled → Admin
+- [x] SMTP configuration ผ่าน environment variables (Gmail-ready)
+- [x] `booking/emails.py` — email helper functions แยกออกจาก views
+- [x] Email เมื่อจองใหม่ (`notify_booking_created`) → แจ้ง Admin
+- [x] Email เมื่ออนุมัติ (`notify_booking_approved`) → แจ้ง Lecturer
+- [x] Email เมื่อปฏิเสธ (`notify_booking_rejected`) พร้อมเหตุผล → แจ้ง Lecturer
+- [x] Email เมื่อยกเลิก (`notify_booking_cancelled`) → แจ้ง Admin
+- [x] Email error ไม่ทำให้ระบบหลักพัง (log แทน raise)
 
 ---
 
@@ -142,8 +145,8 @@ python -m venv venv
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure environment
-# Create .env file with your TU REST API key
+# Configure environment — สร้างไฟล์ .env
+# (ดูตัวอย่างทั้งหมดได้ที่หัวข้อ Environment Variables ด้านล่าง)
 echo TU_REST_API=your_application_key_here > .env
 
 # Run migrations
@@ -158,6 +161,32 @@ python manage.py runserver
 - **Login:** http://127.0.0.1:8000/login/
 - **Dashboard:** http://127.0.0.1:8000/dashboard/
 - **Admin Panel:** http://127.0.0.1:8000/admin/
+
+---
+
+## 🔐 Environment Variables
+
+สร้างไฟล์ `.env` ที่ root ของโปรเจกต์ (อย่า commit ไฟล์นี้):
+
+```env
+# TU REST API (required)
+TU_REST_API=your_tu_application_key_here
+
+# Email — Gmail SMTP (required for Module 9)
+EMAIL_HOST_USER=your_gmail@gmail.com
+EMAIL_HOST_PASSWORD=your_gmail_app_password
+DEFAULT_FROM_EMAIL=your_gmail@gmail.com
+ADMIN_EMAIL=admin_who_receives_notifications@gmail.com
+
+# Optional overrides (ค่า default ใช้ได้เลย)
+# EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+# EMAIL_HOST=smtp.gmail.com
+# EMAIL_PORT=587
+# EMAIL_USE_TLS=True
+```
+
+> **หมายเหตุ Gmail:** ต้องใช้ **App Password** (ไม่ใช่ password ปกติ)  
+> ไปที่ Google Account → Security → 2-Step Verification → App passwords → สร้าง password ใหม่สำหรับ "Mail"
 
 ---
 
