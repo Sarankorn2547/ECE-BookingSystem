@@ -169,6 +169,12 @@ def login_view(request):
                         user.email = email
                         user.save()
 
+                    # Ensure UserProfile exists
+                    UserProfile.objects.get_or_create(
+                        tu_uid=username,
+                        defaults={"username": username, "role": ""},
+                    )
+
                     request.session["tu_profile"] = {
                         "username": username,
                         "display_name_th": display_name_th,
@@ -755,6 +761,15 @@ def admin_system_view(request):
                 )
                 messages.success(request, f"อัปเดตสิทธิ์ผู้ใช้ {tu_uid} เรียบร้อยแล้ว")
             return redirect("booking:admin_system")
+
+    # Ensure all existing Users have a UserProfile
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    for u in User.objects.all():
+        UserProfile.objects.get_or_create(
+            tu_uid=u.username,
+            defaults={"username": u.username, "role": ""}
+        )
 
     rooms = Room.objects.all().order_by("code")
     blackouts = BlackoutPeriod.objects.all().select_related("room").order_by("start_date")
