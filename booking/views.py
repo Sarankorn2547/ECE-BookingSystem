@@ -372,7 +372,7 @@ def booking_form_view(request):
             messages.error(request, f"ข้อมูลไม่ถูกต้อง: {str(e)}")
         except Exception as e:
             logger.exception("Unexpected booking error: %s", e)
-            messages.error(request, "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง")
+            messages.error(request, f"เกิดข้อผิดพลาด: {type(e).__name__}: {e}")
             return redirect("booking:booking_form")
 
     initial_date = request.GET.get('date', '')
