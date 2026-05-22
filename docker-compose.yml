@@ -52,20 +52,6 @@ services:
     labels:
       - "com.ece.allow_logs=true"
 
-  dozzle:
-    image: amir20/dozzle:latest
-    container_name: ece-dozzle
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - TZ=Asia/Bangkok
-      - DOZZLE_FILTER=label=com.ece.allow_logs=true
-    ports:
-      - 8888:8080
-    networks:
-      - ece-network
-
   ece-cron:
     build: .
     container_name: ece-cron
