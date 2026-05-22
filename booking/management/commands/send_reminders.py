@@ -13,7 +13,7 @@ class Command(BaseCommand):
         tomorrow_js_day = (tomorrow.weekday() + 1) % 7
 
         bookings = Booking.objects.filter(
-            status=Booking.Status.APPROVED,
+            status__iexact=Booking.Status.APPROVED,
             start_date__lte=tomorrow,
             end_date__gte=tomorrow
         ).select_related('room')
@@ -26,7 +26,8 @@ class Command(BaseCommand):
                 if b.start_date == tomorrow:
                     occurs_tomorrow = True
             else:
-                if tomorrow_js_day in b.days_of_week:
+                b_days = [int(d) for d in b.days_of_week]
+                if tomorrow_js_day in b_days:
                     occurs_tomorrow = True
 
             if occurs_tomorrow:

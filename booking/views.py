@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 def _is_admin(request):
     try:
         profile = UserProfile.objects.get(tu_uid=request.user.username)
-        return profile.role == UserProfile.Role.ADMIN
+        return profile.role.upper() == UserProfile.Role.ADMIN
     except UserProfile.DoesNotExist:
         return False
 
@@ -222,7 +222,7 @@ def dashboard_view(request):
     booker_id = request.session.get("tu_profile", {}).get("username", request.user.username)
     recent_bookings = (
         Booking.objects.filter(booker_id=booker_id)
-        .exclude(status=Booking.Status.CANCELLED)
+        .exclude(status__in=[Booking.Status.CANCELLED, 'cancelled'])
         .select_related("room")
         .order_by("-created_at")[:5]
     )
@@ -386,13 +386,13 @@ def my_bookings_view(request):
 
     bookings = (
         Booking.objects.filter(booker_id=booker_id)
-        .exclude(status=Booking.Status.CANCELLED)
+        .exclude(status__in=[Booking.Status.CANCELLED, 'cancelled'])
         .select_related("room")
     )
 
     valid_statuses = [s.value for s in Booking.Status]
     if status_filter in valid_statuses:
-        bookings = bookings.filter(status=status_filter)
+        bookings = bookings.filter(status__iexact=status_filter)
 
     if search_query:
         bookings = bookings.filter(
@@ -423,7 +423,7 @@ def cancel_booking_view(request, booking_id):
         messages.error(request, "ไม่พบรายการจองนี้")
         return redirect("booking:my_bookings")
 
-    if booking.status not in [Booking.Status.PENDING, Booking.Status.APPROVED]:
+    if booking.status.upper() not in [Booking.Status.PENDING, Booking.Status.APPROVED]:
         messages.error(request, "ไม่สามารถยกเลิกการจองที่มีสถานะนี้ได้")
         return redirect("booking:my_bookings")
 
@@ -465,7 +465,7 @@ def calendar_events_api(request):
         range_end = date.today() + timedelta(days=30)
 
     bookings = Booking.objects.filter(
-        status__in=[Booking.Status.PENDING, Booking.Status.APPROVED],
+        status__in=[Booking.Status.PENDING, Booking.Status.APPROVED, 'pending', 'approved'],
         start_date__lte=range_end,
         end_date__gte=range_start,
     ).select_related("room")
@@ -475,7 +475,7 @@ def calendar_events_api(request):
 
     events = []
     for booking in bookings:
-        is_approved = booking.status == Booking.Status.APPROVED
+        is_approved = booking.status.upper() == Booking.Status.APPROVED
         bg = "#6FDFFE" if is_approved else "#4A2D8C"
         border = "#4dbcd4" if is_approved else "#4A2D8C"
         text = "#1a1a2e" if is_approved else "#ffffff"
@@ -499,7 +499,7 @@ def calendar_events_api(request):
             "status": booking.status,
         }
 
-        days_of_week = booking.days_of_week
+        days_of_week = [int(d) for d in booking.days_of_week] if booking.days_of_week else None
         effective_start = max(booking.start_date, range_start)
         effective_end = min(booking.end_date, range_end)
 
@@ -540,7 +540,7 @@ def calendar_events_api(request):
 @admin_required
 def approval_queue_view(request):
     pending_bookings = (
-        Booking.objects.filter(status=Booking.Status.PENDING)
+        Booking.objects.filter(status__iexact=Booking.Status.PENDING)
         .select_related("room")
         .order_by("created_at")
     )
@@ -557,7 +557,7 @@ def approval_queue_view(request):
 @admin_required
 @require_http_methods(["POST"])
 def approve_view(request, booking_id):
-    booking = get_object_or_404(Booking, id=booking_id, status=Booking.Status.PENDING)
+    booking = get_object_or_404(Booking, id=booking_id, status__iexact=Booking.Status.PENDING)
     booking.status = Booking.Status.APPROVED
     booking.approval_by = request.user.username
     booking.approval_at = timezone.now()
@@ -572,7 +572,7 @@ def approve_view(request, booking_id):
 @admin_required
 @require_http_methods(["POST"])
 def reject_view(request, booking_id):
-    booking = get_object_or_404(Booking, id=booking_id, status=Booking.Status.PENDING)
+    booking = get_object_or_404(Booking, id=booking_id, status__iexact=Booking.Status.PENDING)
     reason = request.POST.get("reason", "").strip()
     booking.status = Booking.Status.REJECTED
     booking.approval_by = request.user.username
@@ -627,7 +627,7 @@ def admin_reports_view(request):
     max_hours = weekdays_count * 10.0
 
     approved_bookings = Booking.objects.filter(
-        status=Booking.Status.APPROVED,
+        status__iexact=Booking.Status.APPROVED,
         start_date__lte=end_date,
         end_date__gte=start_date,
     ).select_related("room")
@@ -647,7 +647,7 @@ def admin_reports_view(request):
             duration = max(0.0, end_hour - start_hour)
             curr = o_start
             while curr <= o_end:
-                b_days = set(b.days_of_week) if b.days_of_week else None
+                b_days = set(int(d) for d in b.days_of_week) if b.days_of_week else None
                 curr_js_day = (curr.weekday() + 1) % 7
                 if (not b_days) or (curr_js_day in b_days):
                     room_hours += duration
@@ -709,7 +709,7 @@ def admin_reports_export_view(request):
     max_hours = weekdays_count * 10.0
 
     approved_bookings = Booking.objects.filter(
-        status=Booking.Status.APPROVED,
+        status__iexact=Booking.Status.APPROVED,
         start_date__lte=end_date,
         end_date__gte=start_date,
     ).select_related("room")
@@ -738,7 +738,7 @@ def admin_reports_export_view(request):
             duration = max(0.0, end_hour - start_hour)
             curr = o_start
             while curr <= o_end:
-                b_days = set(b.days_of_week) if b.days_of_week else None
+                b_days = set(int(d) for d in b.days_of_week) if b.days_of_week else None
                 curr_js_day = (curr.weekday() + 1) % 7
                 if (not b_days) or (curr_js_day in b_days):
                     room_hours += duration

@@ -52,7 +52,7 @@ def check_booking_conflict(room, start_date, end_date, start_time, end_time, day
     # 2. Check against existing PENDING/APPROVED bookings
     bookings = Booking.objects.filter(
         room=room,
-        status__in=[Booking.Status.PENDING, Booking.Status.APPROVED],
+        status__in=[Booking.Status.PENDING, Booking.Status.APPROVED, 'pending', 'approved'],
         start_date__lte=end_date,
         end_date__gte=start_date
     )
@@ -63,7 +63,7 @@ def check_booking_conflict(room, start_date, end_date, start_time, end_time, day
         o_start = max(start_date, b.start_date)
         o_end = min(end_date, b.end_date)
 
-        b_days = set(b.days_of_week) if b.days_of_week else None
+        b_days = set(int(d) for d in b.days_of_week) if b.days_of_week else None
 
         has_active_date = False
         curr = o_start

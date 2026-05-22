@@ -67,7 +67,7 @@ def check_booking_conflict(room, start_date, end_date, start_time, end_time, day
     # 2. Check against existing PENDING/APPROVED bookings
     bookings = Booking.objects.filter(
         room=room,
-        status__in=['PENDING', 'APPROVED'],
+        status__in=['PENDING', 'pending', 'APPROVED', 'approved'],
         start_date__lte=end_date,
         end_date__gte=start_date
     )
@@ -78,7 +78,7 @@ def check_booking_conflict(room, start_date, end_date, start_time, end_time, day
         o_start = max(start_date, b.start_date)
         o_end = min(end_date, b.end_date)
 
-        b_days = set(b.days_of_week) if b.days_of_week else None
+        b_days = set(int(d) for d in b.days_of_week) if b.days_of_week else None
 
         has_active_date = False
         curr = o_start
@@ -344,7 +344,7 @@ class NLPParseView(APIView):
                 # Check bookings active on this day
                 bookings = Booking.objects.filter(
                     room=room,
-                    status__in=['APPROVED', 'PENDING'],
+                    status__in=['APPROVED', 'approved', 'PENDING', 'pending'],
                     start_date__lte=target_date,
                     end_date__gte=target_date
                 ).order_by('start_time')
@@ -403,7 +403,7 @@ class NLPParseView(APIView):
             # Check bookings active on this day
             bookings = Booking.objects.filter(
                 room=room,
-                status__in=['APPROVED', 'PENDING'],
+                status__in=['APPROVED', 'approved', 'PENDING', 'pending'],
                 start_date__lte=target_date,
                 end_date__gte=target_date
             ).order_by('start_time')
@@ -460,7 +460,7 @@ class NLPParseView(APIView):
         # We want bookings where end_date > current_date OR (end_date == current_date and end_time >= current_time)
         bookings = Booking.objects.filter(
             q_user,
-            status__in=['PENDING', 'APPROVED']
+            status__in=['PENDING', 'pending', 'APPROVED', 'approved']
         ).filter(
             Q(end_date__gt=current_date) | Q(end_date=current_date, end_time__gte=current_time)
         ).order_by('start_date', 'start_time')[:10]
@@ -471,7 +471,7 @@ class NLPParseView(APIView):
         display_title = f"{mapped_user.first_name} ({mapped_user.username})" if mapped_user else username
         msg = f"📋 **การจองของ {display_title}**\n\n"
         for b in bookings:
-            icon = "⏳" if b.status == 'PENDING' else "✅"
+            icon = "⏳" if b.status.upper() == 'PENDING' else "✅"
             desc = f"{b.course_code or ''} {b.course_name or b.training_title or ''}".strip() or "-"
             msg += (
                 f"{icon} **#{b.id}** ห้อง **{b.room.code}**\n"
@@ -498,7 +498,7 @@ class NLPParseView(APIView):
                 q_user,
                 room__code=room_id,
                 start_date=target_date,
-                status__in=['PENDING', 'APPROVED']
+                status__in=['PENDING', 'pending', 'APPROVED', 'approved']
             )
             if not bookings.exists():
                 return Response({"type": "message", "text": f"❓ ไม่พบการจองห้อง **{room_id}** วันที่ **{date_str}** ของคุณครับ"})
@@ -525,7 +525,7 @@ class NLPParseView(APIView):
         if mapped_user:
             try:
                 profile = UserProfile.objects.get(tu_uid=mapped_user.username)
-                if profile.role == UserProfile.Role.ADMIN:
+                if profile.role.upper() == UserProfile.Role.ADMIN:
                     is_admin = True
             except UserProfile.DoesNotExist:
                 pass
