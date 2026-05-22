@@ -363,3 +363,129 @@ class AdminReportsViewTest(TestCase):
         self.assertEqual(response.context['purpose_stats']['COURSE'], 1)
         self.assertEqual(response.context['purpose_stats']['TRAINING'], 1)
         self.assertEqual(response.context['program_stats']['BACHELOR'], 1)
+
+
+class TULoginWhitelistTest(TestCase):
+    """Test TU type whitelist and initial admin auto-assignment features."""
+
+    def setUp(self):
+        self.client = Client()
+        self.login_url = reverse('booking:login')
+
+    def _mock_tu_response(self, tu_type='lecturer', username='teststaff'):
+        """Return a mock TU REST API successful response dict."""
+        return {
+            "status": True,
+            "displayname_th": "ทดสอบ ผู้ใช้",
+            "displayname_en": "Test User",
+            "email": f"{username}@tu.ac.th",
+            "department": "ECE",
+            "faculty": "Engineering",
+            "type": tu_type,
+        }
+
+    def test_whitelist_blocks_unlisted_type(self):
+        """User with type 'alumni' should be blocked when whitelist is student,staff,lecturer."""
+        from unittest.mock import patch, MagicMock
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = self._mock_tu_response(tu_type='alumni', username='alum001')
+
+        with patch('booking.views.requests.post', return_value=mock_resp):
+            with self.settings(ALLOWED_TU_TYPES=['student', 'staff', 'lecturer']):
+                response = self.client.post(self.login_url, {
+                    'username': 'alum001',
+                    'password': 'anypassword',
+                })
+        # Should stay on login page with an error message
+        self.assertEqual(response.status_code, 200)
+        messages_list = list(response.wsgi_request._messages)
+        self.assertTrue(any('ไม่มีสิทธิ์' in str(m) for m in messages_list))
+
+    def test_whitelist_allows_listed_type(self):
+        """User with type 'lecturer' should be allowed through whitelist."""
+        from unittest.mock import patch, MagicMock
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = self._mock_tu_response(tu_type='lecturer', username='lec001')
+
+        with patch('booking.views.requests.post', return_value=mock_resp):
+            with self.settings(ALLOWED_TU_TYPES=['student', 'staff', 'lecturer'],
+                               INITIAL_ADMIN_USERNAMES=[]):
+                response = self.client.post(self.login_url, {
+                    'username': 'lec001',
+                    'password': 'anypassword',
+                })
+        # Should redirect to dashboard
+        self.assertRedirects(response, '/dashboard/', fetch_redirect_response=False)
+
+    def test_empty_whitelist_allows_all_types(self):
+        """Empty ALLOWED_TU_TYPES should not block any user type."""
+        from unittest.mock import patch, MagicMock
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = self._mock_tu_response(tu_type='external', username='ext001')
+
+        with patch('booking.views.requests.post', return_value=mock_resp):
+            with self.settings(ALLOWED_TU_TYPES=[], INITIAL_ADMIN_USERNAMES=[]):
+                response = self.client.post(self.login_url, {
+                    'username': 'ext001',
+                    'password': 'anypassword',
+                })
+        self.assertRedirects(response, '/dashboard/', fetch_redirect_response=False)
+
+    def test_initial_admin_gets_admin_role_on_first_login(self):
+        """Username in INITIAL_ADMIN_USERNAMES should get ADMIN role on first login."""
+        from unittest.mock import patch, MagicMock
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = self._mock_tu_response(tu_type='staff', username='sairags')
+
+        with patch('booking.views.requests.post', return_value=mock_resp):
+            with self.settings(ALLOWED_TU_TYPES=[], INITIAL_ADMIN_USERNAMES=['sairags']):
+                self.client.post(self.login_url, {
+                    'username': 'sairags',
+                    'password': 'anypassword',
+                })
+
+        profile = UserProfile.objects.get(tu_uid='sairags')
+        self.assertEqual(profile.role, UserProfile.Role.ADMIN)
+
+    def test_non_initial_admin_gets_no_role_on_first_login(self):
+        """Username NOT in INITIAL_ADMIN_USERNAMES should get empty role on first login."""
+        from unittest.mock import patch, MagicMock
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = self._mock_tu_response(tu_type='lecturer', username='random001')
+
+        with patch('booking.views.requests.post', return_value=mock_resp):
+            with self.settings(ALLOWED_TU_TYPES=[], INITIAL_ADMIN_USERNAMES=['sairags']):
+                self.client.post(self.login_url, {
+                    'username': 'random001',
+                    'password': 'anypassword',
+                })
+
+        profile = UserProfile.objects.get(tu_uid='random001')
+        self.assertEqual(profile.role, '')  # ไม่มี role
+
+    def test_initial_admin_existing_empty_role_gets_promoted(self):
+        """Username in INITIAL_ADMIN_USERNAMES with an existing empty-role profile gets promoted."""
+        from unittest.mock import patch, MagicMock
+        # Pre-create profile with empty role
+        User.objects.create_user(username='wachira', password='test')
+        UserProfile.objects.create(tu_uid='wachira', username='wachira', role='')
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = self._mock_tu_response(tu_type='staff', username='wachira')
+
+        with patch('booking.views.requests.post', return_value=mock_resp):
+            with self.settings(ALLOWED_TU_TYPES=[], INITIAL_ADMIN_USERNAMES=['wachira']):
+                self.client.post(self.login_url, {
+                    'username': 'wachira',
+                    'password': 'anypassword',
+                })
+
+        profile = UserProfile.objects.get(tu_uid='wachira')
+        self.assertEqual(profile.role, UserProfile.Role.ADMIN)
+

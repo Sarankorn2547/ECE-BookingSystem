@@ -158,6 +158,18 @@ def login_view(request):
                     faculty = data.get("faculty", "")
                     tu_status = data.get("type", "")
 
+                    # ── Whitelist Check ────────────────────────────────────────────
+                    allowed_types = settings.ALLOWED_TU_TYPES  # list จาก .env
+                    if allowed_types and tu_status.lower() not in allowed_types:
+                        allowed_display = ", ".join(allowed_types)
+                        messages.error(
+                            request,
+                            f"บัญชีประเภท '{tu_status}' ไม่มีสิทธิ์เข้าใช้งานระบบนี้ "
+                            f"(อนุญาตเฉพาะ: {allowed_display})"
+                        )
+                        return render(request, "booking/login.html")
+                    # ──────────────────────────────────────────────────────────────
+
                     user, created = User.objects.get_or_create(
                         username=username,
                         defaults={
@@ -169,11 +181,23 @@ def login_view(request):
                         user.email = email
                         user.save()
 
-                    # Ensure UserProfile exists
-                    UserProfile.objects.get_or_create(
+                    # ── Ensure UserProfile exists + Initial Admin Assignment ───────
+                    initial_admins = settings.INITIAL_ADMIN_USERNAMES  # list จาก .env
+                    is_initial_admin = username.lower() in initial_admins
+
+                    profile, profile_created = UserProfile.objects.get_or_create(
                         tu_uid=username,
-                        defaults={"username": username, "role": ""},
+                        defaults={
+                            "username": username,
+                            "role": UserProfile.Role.ADMIN if is_initial_admin else "",
+                        },
                     )
+
+                    # ถ้า profile มีอยู่แล้ว แต่ role ว่าง และอยู่ใน initial_admins → อัปเดต
+                    if not profile_created and not profile.role and is_initial_admin:
+                        profile.role = UserProfile.Role.ADMIN
+                        profile.save()
+                    # ──────────────────────────────────────────────────────────────
 
                     request.session["tu_profile"] = {
                         "username": username,

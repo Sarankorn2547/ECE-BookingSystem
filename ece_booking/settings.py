@@ -113,6 +113,24 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # TU REST API
 TU_REST_API_KEY = os.getenv("TU_REST_API", "")
 
+# TU Login Whitelist — ประเภทผู้ใช้ที่อนุญาต (จาก field "type" ใน TU REST API response)
+# ถ้าว่าง = ไม่กรอง (อนุญาตทุก type)
+_allowed_types_raw = os.getenv("ALLOWED_TU_TYPES", "")
+ALLOWED_TU_TYPES: list[str] = [
+    t.strip().lower()
+    for t in _allowed_types_raw.replace(",", " ").split()
+    if t.strip()
+]
+
+# Initial Admin Usernames — username ที่จะได้ ADMIN role อัตโนมัติตอน login ครั้งแรก
+# คั่นด้วยช่องว่างหรือ comma ใน .env
+_initial_admins_raw = os.getenv("INITIAL_ADMIN_USERNAMES", "")
+INITIAL_ADMIN_USERNAMES: list[str] = [
+    u.strip().lower()
+    for u in _initial_admins_raw.replace(",", " ").split()
+    if u.strip()
+]
+
 # Email (SMTP via Gmail — Module 9)
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
