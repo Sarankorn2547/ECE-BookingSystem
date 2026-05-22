@@ -506,9 +506,9 @@ def calendar_events_api(request):
     events = []
     for booking in bookings:
         is_approved = booking.status.upper() == Booking.Status.APPROVED
-        bg = "#6FDFFE" if is_approved else "#4A2D8C"
-        border = "#4dbcd4" if is_approved else "#4A2D8C"
-        text = "#1a1a2e" if is_approved else "#ffffff"
+        bg = "#6FDFFE" if is_approved else "#FCD34D"
+        border = "#4dbcd4" if is_approved else "#F59E0B"
+        text = "#1a1a2e" if is_approved else "#78350F"
 
         if booking.purpose_type == Booking.PurposeType.COURSE:
             parts = [p for p in [booking.course_code, booking.course_name] if p]
