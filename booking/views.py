@@ -310,6 +310,11 @@ def booking_form_view(request):
             if not start_date or not start_time or not end_time:
                 raise ValueError("Invalid date/time format")
 
+            today = timezone.localtime(timezone.now()).date()
+            if start_date < today:
+                messages.error(request, "ไม่สามารถจองวันที่ผ่านมาแล้วได้")
+                return redirect("booking:booking_form")
+
             if end_date < start_date:
                 messages.error(request, "วันที่สิ้นสุดต้องไม่น้อยกว่าวันที่เริ่มต้น")
                 return redirect("booking:booking_form")
@@ -392,12 +397,14 @@ def booking_form_view(request):
         except Room.DoesNotExist:
             pass
 
+    today_str = timezone.localtime(timezone.now()).date().isoformat()
     context = {
         **_base_context(request),
         "rooms": Room.objects.all().order_by("code"),
         "active_page": "booking",
         "initial_date": initial_date,
         "selected_room_id": selected_room_id,
+        "today": today_str,
     }
     return render(request, "booking/booking-form.html", context)
 

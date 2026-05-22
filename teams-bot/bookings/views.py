@@ -357,7 +357,12 @@ class NLPParseView(APIView):
                     blocked_intervals.append((bp_start, bp_end, f"ปิดปรับปรุง: {bp.title}"))
                 
                 # Add bookings as blocked intervals
+                # days_of_week convention: 0=Sun, 1=Mon, ..., 6=Sat (same as form)
+                # isoweekday() % 7 maps Mon-Sat → 1-6, Sun → 0
+                target_weekday = target_date.isoweekday() % 7
                 for b in bookings:
+                    if b.days_of_week and target_weekday not in b.days_of_week:
+                        continue  # recurring booking doesn't apply to this weekday
                     desc = f"{b.course_code or ''} {b.course_name or b.training_title or ''}".strip() or "จองแล้ว"
                     blocked_intervals.append((b.start_time, b.end_time, desc))
 
@@ -413,7 +418,10 @@ class NLPParseView(APIView):
                 bp_start = bp.start_time or time(0, 0)
                 bp_end = bp.end_time or time(23, 59, 59)
                 blocked_intervals.append((bp_start, bp_end, f"ปิดปรับปรุง: {bp.title}"))
+            target_weekday = target_date.isoweekday() % 7
             for b in bookings:
+                if b.days_of_week and target_weekday not in b.days_of_week:
+                    continue
                 desc = f"{b.course_code or ''} {b.course_name or b.training_title or ''}".strip() or "จองแล้ว"
                 blocked_intervals.append((b.start_time, b.end_time, desc))
 

@@ -165,11 +165,11 @@
                             <div class="row g-4 mb-4">
                                 <div class="col-md-6">
                                     <label class="ece-form-label">ตั้งแต่วันที่</label>
-                                    <input type="date" name="start_date" class="ece-form-input" value="{{ initial_date }}" required>
+                                    <input type="date" name="start_date" class="ece-form-input" value="{{ initial_date }}" min="{{ today }}" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="ece-form-label">ถึงวันที่</label>
-                                    <input type="date" name="end_date" class="ece-form-input" value="{{ initial_date }}">
+                                    <input type="date" name="end_date" class="ece-form-input" value="{{ initial_date }}" min="{{ today }}">
                                 </div>
                             </div>
 
