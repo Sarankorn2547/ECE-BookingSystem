@@ -583,6 +583,28 @@ def approval_queue_view(request):
     return render(request, "booking/admin-approvals.html", context)
 
 
+def _bookings_conflict(b1, b2) -> bool:
+    """Return True if b1 and b2 occupy the same room on at least one overlapping occasion."""
+    # Date range must overlap
+    if b1.start_date > b2.end_date or b1.end_date < b2.start_date:
+        return False
+    # Time must overlap (exclusive boundaries)
+    if b1.start_time >= b2.end_time or b1.end_time <= b2.start_time:
+        return False
+    # Day-of-week must overlap
+    days1 = set(b1.days_of_week) if b1.days_of_week else None
+    days2 = set(b2.days_of_week) if b2.days_of_week else None
+    if days1 is None and days2 is None:
+        return b1.start_date == b2.start_date
+    elif days1 is None:
+        # b1 is single-day; its weekday must be in b2's recurring days
+        return (b1.start_date.isoweekday() % 7) in days2
+    elif days2 is None:
+        return (b2.start_date.isoweekday() % 7) in days1
+    else:
+        return bool(days1 & days2)
+
+
 @login_required
 @admin_required
 @require_http_methods(["POST"])
@@ -594,7 +616,36 @@ def approve_view(request, booking_id):
     booking.save()
     BookingLog.objects.create(booking=booking, action="APPROVED", actor=request.user.username)
     notify_booking_approved(booking)
-    messages.success(request, f"อนุมัติการจองของ {booking.booker_name or booking.booker_id} เรียบร้อยแล้ว")
+
+    # Auto-reject other pending bookings that conflict with the newly approved one
+    conflict_reason = f"ห้องถูกจองโดย {booking.booker_name or booking.booker_id} ในช่วงเวลาเดียวกัน"
+    candidates = Booking.objects.filter(
+        room=booking.room,
+        status__iexact=Booking.Status.PENDING,
+        start_date__lte=booking.end_date,
+        end_date__gte=booking.start_date,
+    ).exclude(pk=booking.pk)
+
+    rejected_count = 0
+    for other in candidates:
+        if _bookings_conflict(booking, other):
+            other.status = Booking.Status.REJECTED
+            other.approval_by = request.user.username
+            other.approval_at = timezone.now()
+            other.save()
+            BookingLog.objects.create(
+                booking=other,
+                action="REJECTED",
+                actor=request.user.username,
+                metadata={"reason": conflict_reason},
+            )
+            notify_booking_rejected(other, conflict_reason)
+            rejected_count += 1
+
+    msg = f"อนุมัติการจองของ {booking.booker_name or booking.booker_id} เรียบร้อยแล้ว"
+    if rejected_count:
+        msg += f" (ปฏิเสธอัตโนมัติ {rejected_count} รายการที่ซ้อนทับ)"
+    messages.success(request, msg)
     return redirect("booking:approval_queue")
 
 
