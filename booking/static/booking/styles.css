@@ -1347,6 +1347,9 @@ body {
   gap: 5px;
   width: 40px;
   height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  box-sizing: border-box;
   background: transparent;
   border: 1.5px solid var(--border);
   border-radius: 10px;
@@ -1355,16 +1358,26 @@ body {
   z-index: 1200;
   position: relative;
   flex-shrink: 0;
+  /* prevent Bootstrap font/line-height from inflating the spans */
+  font-size: 0;
+  line-height: 0;
+}
+
+.navbar-hamburger.open {
+  overflow: visible;
 }
 
 .navbar-hamburger span {
   display: block;
   width: 20px;
   height: 2px;
+  min-height: 2px;
+  max-height: 2px;
   background: var(--font-dark-blue);
   border-radius: 2px;
   transition: all 0.3s ease;
   transform-origin: center;
+  flex-shrink: 0;
 }
 
 /* Animate to X when open */
