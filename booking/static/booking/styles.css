@@ -159,9 +159,9 @@ body {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg,
-      rgba(255, 255, 255, 0.35) 0%,
-      rgba(255, 255, 255, 0.55) 40%,
-      rgba(245, 247, 250, 0.85) 85%,
+      rgba(255, 255, 255, 0.15) 0%,
+      rgba(255, 255, 255, 0.3) 40%,
+      rgba(245, 247, 250, 0.75) 85%,
       rgba(245, 247, 250, 1) 100%);
 }
 
@@ -648,7 +648,7 @@ body {
   justify-content: center;
   text-align: center;
   overflow: hidden;
-  padding-top: 80px;
+  padding-top: 100px;
 }
 
 .page-header-bg {

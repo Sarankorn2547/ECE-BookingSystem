@@ -12,55 +12,464 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
     <link rel="stylesheet" href="{% static 'booking/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'booking/motion.css' %}">
 
     <style>
+        /* =========================================
+           CALENDAR PAGE — Figma-Matched Design
+           ========================================= */
+
+        /* --- Calendar Controls Bar --- */
+        .cal-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .cal-controls-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Date Navigator */
+        .cal-date-nav {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #fff;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 8px 16px;
+        }
+
+        .cal-date-nav-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--font-dark-blue);
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+
+        .cal-date-nav-btn:hover {
+            background: var(--ece-blue-light);
+            color: var(--font-dark-blue);
+        }
+
+        .cal-date-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--font-dark-blue);
+            min-width: 200px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* View Toggle Buttons */
+        .cal-view-toggle {
+            display: flex;
+            background: #fff;
+            padding: 4px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+        }
+
+        .cal-view-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cal-view-btn:hover {
+            color: var(--font-dark-blue);
+        }
+
+        .cal-view-btn.active {
+            background: var(--ece-blue);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(111, 223, 254, 0.3);
+        }
+
+        /* --- Room Filter Pills --- */
+        .cal-room-filter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .cal-room-filter-icon {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .cal-room-pill {
+            padding: 7px 18px;
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            background: #fff;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .cal-room-pill:hover {
+            border-color: var(--ece-blue);
+            color: var(--font-dark-blue);
+        }
+
+        .cal-room-pill.active {
+            background: var(--font-dark-blue);
+            border-color: var(--font-dark-blue);
+            color: #fff;
+        }
+
+        /* --- Legend --- */
+        .cal-legend {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+        }
+
+        .cal-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .cal-legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .cal-legend-dot.available { background: #d1fae5; border: 1px solid #6ee7b7; }
+        .cal-legend-dot.pending   { background: #fef3c7; border: 1px solid #fcd34d; }
+        .cal-legend-dot.occupied  { background: rgba(111, 223, 254, 0.25); border: 1px solid var(--ece-blue); }
+
+        /* --- FullCalendar Override — Figma Style --- */
         :root {
             --fc-border-color: #e5e7eb;
-            --fc-today-bg-color: rgba(111, 223, 254, 0.06);
+            --fc-today-bg-color: rgba(111, 223, 254, 0.04);
             --fc-event-bg-color: var(--ece-blue);
             --fc-event-border-color: var(--ece-blue);
         }
+
         .fc {
-            background: white;
-            padding: 1.5rem;
+            background: #fff;
             border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
             border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
         }
-        .fc-header-toolbar { margin-bottom: 2rem !important; }
-        .fc-button-primary {
-            background-color: #fff !important;
-            border-color: var(--border) !important;
+
+        /* Hide default FC toolbar — we use our own */
+        .fc .fc-header-toolbar { display: none !important; }
+
+        /* Column headers */
+        .fc .fc-col-header-cell {
+            padding: 14px 0 !important;
+            background: #f8f9fb;
+            font-weight: 700 !important;
+            font-size: 0.9rem;
+            color: var(--font-dark-blue);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .fc .fc-col-header-cell-cushion {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            text-decoration: none !important;
             color: var(--font-dark-blue) !important;
-            font-weight: 600 !important;
-            text-transform: capitalize !important;
             font-family: 'Sarabun', sans-serif !important;
         }
-        .fc-button-primary:hover { background-color: var(--ece-blue-light) !important; }
-        .fc-button-active {
-            background-color: var(--ece-blue) !important;
-            border-color: var(--ece-blue) !important;
-            color: white !important;
+
+        /* Time column */
+        .fc .fc-timegrid-slot-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            font-family: 'Sarabun', sans-serif;
         }
-        .fc-col-header-cell {
-            padding: 1rem 0 !important;
+
+        .fc .fc-timegrid-slot {
+            height: 56px !important;
+        }
+
+        /* Today highlight */
+        .fc .fc-day-today {
+            background: var(--fc-today-bg-color) !important;
+        }
+
+        .fc .fc-col-header-cell.fc-day-today {
+            background: rgba(111, 223, 254, 0.1) !important;
+        }
+
+        .fc .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
+            color: var(--ece-blue-dark) !important;
+        }
+
+        /* Events — Booking Cards inside calendar */
+        .fc-event {
+            border: none !important;
+            border-radius: 8px !important;
+            padding: 4px 8px !important;
+            font-family: 'Sarabun', sans-serif !important;
+            font-size: 0.78rem !important;
+            font-weight: 600 !important;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            overflow: hidden;
+        }
+
+        .fc-event:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            z-index: 10 !important;
+        }
+
+        .fc-event .fc-event-main {
+            padding: 2px 0;
+            overflow: hidden;
+        }
+
+        .fc-event .fc-event-time {
+            font-size: 0.72rem !important;
+            font-weight: 500 !important;
+            opacity: 0.85;
+        }
+
+        .fc-event .fc-event-title {
+            font-weight: 700 !important;
+            font-size: 0.8rem !important;
+            line-height: 1.3;
+        }
+
+        /* Scrollbar */
+        .fc .fc-scroller::-webkit-scrollbar { width: 6px; }
+        .fc .fc-scroller::-webkit-scrollbar-track { background: transparent; }
+        .fc .fc-scroller::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+
+        /* No-events slot click hint */
+        .fc .fc-timegrid-col:hover {
+            cursor: pointer;
+        }
+
+        /* --- Event Detail Modal --- */
+        .cal-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 9000;
+            align-items: center;
+            justify-content: center;
+            animation: modalFadeIn 0.2s ease;
+        }
+
+        .cal-modal-overlay.show { display: flex; }
+
+        .cal-modal {
+            background: #fff;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 440px;
+            padding: 0;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+            animation: modalSlideUp 0.3s ease;
+            overflow: hidden;
+        }
+
+        .cal-modal-header {
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .cal-modal-header h5 {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--font-dark-blue);
+        }
+
+        .cal-modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f3f4f6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .cal-modal-close:hover {
+            background: #e5e7eb;
+            color: var(--text);
+        }
+
+        .cal-modal-body {
+            padding: 0 24px 24px;
+        }
+
+        .cal-modal-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .cal-modal-row:last-child { border-bottom: none; }
+
+        .cal-modal-row i {
+            width: 20px;
+            text-align: center;
+            color: var(--ece-blue);
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .cal-modal-row .label {
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .cal-modal-row .value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .cal-modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
             background: #f8f9fb;
-            font-weight: 800 !important;
+            text-align: center;
         }
-        .fc-toolbar-title { color: var(--font-dark-blue) !important; }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes modalSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Month View overrides --- */
+        .fc-daygrid-event {
+            border-radius: 6px !important;
+            padding: 2px 6px !important;
+            margin-bottom: 2px !important;
+        }
+
+        .fc .fc-daygrid-day-number {
+            font-family: 'Sarabun', sans-serif;
+            font-weight: 700;
+            color: var(--font-dark-blue);
+            font-size: 0.85rem;
+            padding: 8px 10px;
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 768px) {
+            .cal-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .cal-controls-left {
+                flex-direction: column;
+            }
+
+            .cal-date-nav {
+                justify-content: center;
+            }
+
+            .cal-view-toggle {
+                justify-content: center;
+            }
+
+            .cal-room-filter {
+                justify-content: center;
+            }
+
+            .cal-legend {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .cal-date-title {
+                min-width: unset;
+                font-size: 0.9rem;
+            }
+
+            .cal-controls-right {
+                justify-content: center;
+            }
+
+            .fc .fc-timegrid-slot {
+                height: 48px !important;
+            }
+        }
     </style>
 </head>
 <body>
     {% include 'booking/navbar.html' %}
 
+    <!-- Page Header -->
     <section class="page-header">
         <div class="page-header-bg"></div>
         <div class="page-header-content">
-            <h1 class="page-header-title"><i class="fa-solid fa-calendar-days me-3"></i>ปฏิทินการจอง</h1>
-            <p class="page-header-subtitle">Calendar — ดูตารางการใช้ห้องทั้งหมดในภาควิชา</p>
+            <h1 class="page-header-title">
+                <i class="fa-solid fa-calendar-days me-2"></i>ตารางการใช้ห้อง
+            </h1>
+            <p class="page-header-subtitle">Calendar — ดูตารางการจองและสถานะห้องทั้งหมดของภาควิชา</p>
         </div>
     </section>
 
+    <!-- Toast Messages -->
     {% if messages %}
     <div class="home-toast-container" id="toast-container">
         {% for message in messages %}
@@ -74,70 +483,287 @@
     </div>
     {% endif %}
 
-    <div class="page-content">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-            <div class="d-flex align-items-center gap-2">
-                <label class="fw-bold small text-muted text-uppercase">กรองตามห้อง:</label>
-                <select id="room-filter" class="ece-form-input" style="width: 200px; padding: 8px 16px;">
-                    <option value="">ทุกห้อง (All Rooms)</option>
-                    {% for room in rooms %}
-                    <option value="{{ room.code }}">{{ room.code }} — {{ room.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="d-flex gap-3 align-items-center">
-                <div class="d-flex align-items-center gap-4 me-2 small">
-                    <div class="d-flex align-items-center gap-2"><span class="rounded-1 d-inline-block" style="width: 12px; height: 12px; background-color: var(--ece-blue);"></span> อนุมัติแล้ว</div>
-                    <div class="d-flex align-items-center gap-2"><span class="rounded-1 d-inline-block" style="width: 12px; height: 12px; background-color: var(--font-dark-blue);"></span> รออนุมัติ</div>
+    <!-- Calendar Content -->
+    <div class="page-content" style="max-width: 1300px;">
+
+        <!-- Controls Bar -->
+        <div class="cal-controls">
+            <div class="cal-controls-left">
+                <!-- Date Navigator -->
+                <div class="cal-date-nav">
+                    <button class="cal-date-nav-btn" id="btn-prev" title="ก่อนหน้า">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <span class="cal-date-title" id="cal-title"></span>
+                    <button class="cal-date-nav-btn" id="btn-next" title="ถัดไป">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
                 </div>
-                <a href="{% url 'booking:booking_form' %}" class="ece-btn-primary px-4">
-                    <i class="fa-solid fa-plus me-1"></i> จองห้อง
+
+                <!-- View Toggle -->
+                <div class="cal-view-toggle">
+                    <button class="cal-view-btn active" data-view="timeGridWeek">
+                        <i class="fa-solid fa-table-cells"></i> สัปดาห์ (Week)
+                    </button>
+                    <button class="cal-view-btn" data-view="dayGridMonth">
+                        <i class="fa-regular fa-calendar"></i> เดือน (Month)
+                    </button>
+                    <button class="cal-view-btn" data-view="timeGridDay">
+                        <i class="fa-solid fa-calendar-day"></i> วัน (Day)
+                    </button>
+                </div>
+            </div>
+
+            <div class="cal-controls-right">
+                <a href="{% url 'booking:booking_form' %}" class="ece-btn-primary">
+                    <i class="fa-solid fa-plus me-2"></i> สร้างการจองใหม่
                 </a>
             </div>
         </div>
 
-        <div id='calendar'></div>
+        <!-- Room Filter + Legend -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <div class="cal-room-filter">
+                <i class="fa-solid fa-filter cal-room-filter-icon"></i>
+                <button class="cal-room-pill active" data-room="">ทั้งหมด</button>
+                {% for room in rooms %}
+                <button class="cal-room-pill" data-room="{{ room.code }}">{{ room.code }}</button>
+                {% endfor %}
+            </div>
+
+            <div class="cal-legend">
+                <div class="cal-legend-item">
+                    <span class="cal-legend-dot available"></span> ว่าง (Available)
+                </div>
+                <div class="cal-legend-item">
+                    <span class="cal-legend-dot pending"></span> รออนุมัติ (Pending)
+                </div>
+                <div class="cal-legend-item">
+                    <span class="cal-legend-dot occupied"></span> จองแล้ว (Occupied)
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div id="calendar"></div>
+    </div>
+
+    <!-- Event Detail Modal -->
+    <div class="cal-modal-overlay" id="event-modal">
+        <div class="cal-modal">
+            <div class="cal-modal-header">
+                <h5 id="modal-title">รายละเอียดการจอง</h5>
+                <button class="cal-modal-close" id="modal-close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="cal-modal-body">
+                <div class="cal-modal-row">
+                    <i class="fa-solid fa-book"></i>
+                    <div>
+                        <div class="label">วิชา / หัวข้อ</div>
+                        <div class="value" id="modal-subject">—</div>
+                    </div>
+                </div>
+                <div class="cal-modal-row">
+                    <i class="fa-solid fa-door-open"></i>
+                    <div>
+                        <div class="label">ห้อง</div>
+                        <div class="value" id="modal-room">—</div>
+                    </div>
+                </div>
+                <div class="cal-modal-row">
+                    <i class="fa-regular fa-clock"></i>
+                    <div>
+                        <div class="label">วันที่ / เวลา</div>
+                        <div class="value" id="modal-datetime">—</div>
+                    </div>
+                </div>
+                <div class="cal-modal-row">
+                    <i class="fa-solid fa-user"></i>
+                    <div>
+                        <div class="label">ผู้จอง</div>
+                        <div class="value" id="modal-booker">—</div>
+                    </div>
+                </div>
+                <div class="cal-modal-row">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <div>
+                        <div class="label">สถานะ</div>
+                        <div class="value" id="modal-status">—</div>
+                    </div>
+                </div>
+            </div>
+            <div class="cal-modal-footer">
+                <a href="{% url 'booking:booking_form' %}" class="ece-btn-primary px-4" style="font-size: 0.85rem;">
+                    <i class="fa-solid fa-plus me-1"></i> จองห้องนี้
+                </a>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // ---- FullCalendar Init ----
         var calendarEl = document.getElementById('calendar');
+        var currentRoom = '';
+
         var calendar = new FullCalendar.Calendar(calendarEl, {
-          initialView: 'timeGridWeek',
-          headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
-          },
-          locale: 'th',
-          slotMinTime: '08:00:00',
-          slotMaxTime: '20:00:00',
-          allDaySlot: false,
-          height: 'auto',
-          events: function(info, successCallback, failureCallback) {
-            var url = "{% url 'booking:calendar_events' %}?start=" + info.startStr + "&end=" + info.endStr;
-            var roomCode = document.getElementById('room-filter').value;
-            if (roomCode) url += "&room=" + encodeURIComponent(roomCode);
-            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-              .then(function(r) { return r.json(); })
-              .then(function(data) { successCallback(data); })
-              .catch(function() { failureCallback(); });
-          },
-          dateClick: function(info) {
-            window.location.href = "{% url 'booking:booking_form' %}?date=" + info.dateStr;
-          }
+            initialView: 'timeGridWeek',
+            locale: 'th',
+            firstDay: 1, // Monday
+            slotMinTime: '08:00:00',
+            slotMaxTime: '20:00:00',
+            allDaySlot: false,
+            height: 'auto',
+            expandRows: true,
+            nowIndicator: true,
+            slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+            dayHeaderFormat: { weekday: 'short', day: 'numeric', month: 'short' },
+            headerToolbar: false, // We use custom toolbar
+
+            events: function(info, successCallback, failureCallback) {
+                var url = "{% url 'booking:calendar_events' %}?start=" + info.startStr + "&end=" + info.endStr;
+                if (currentRoom) url += "&room=" + encodeURIComponent(currentRoom);
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) { successCallback(data); })
+                    .catch(function() { failureCallback(); });
+            },
+
+            // Click on event → show modal
+            eventClick: function(info) {
+                info.jsEvent.preventDefault();
+                var ev = info.event;
+                var props = ev.extendedProps || {};
+
+                document.getElementById('modal-subject').textContent = ev.title || '—';
+
+                var roomText = props.room_code ? (props.room_code + ' — ' + (props.room_name || '')) : '—';
+                document.getElementById('modal-room').textContent = roomText;
+
+                // Format date/time
+                var startDt = ev.start;
+                var endDt = ev.end;
+                if (startDt) {
+                    var opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                    var dateStr = startDt.toLocaleDateString('th-TH', opts);
+                    var timeStr = startDt.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                    if (endDt) {
+                        timeStr += ' — ' + endDt.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                    }
+                    document.getElementById('modal-datetime').textContent = dateStr + '  ' + timeStr;
+                } else {
+                    document.getElementById('modal-datetime').textContent = '—';
+                }
+
+                document.getElementById('modal-booker').textContent = props.booker_name || '—';
+
+                var statusEl = document.getElementById('modal-status');
+                var status = props.status || '';
+                if (status === 'APPROVED') {
+                    statusEl.innerHTML = '<span class="ece-badge approved">อนุมัติแล้ว</span>';
+                } else if (status === 'PENDING') {
+                    statusEl.innerHTML = '<span class="ece-badge pending">รออนุมัติ</span>';
+                } else {
+                    statusEl.innerHTML = '<span class="ece-badge" style="background:#e5e7eb;color:#374151;">ไม่ระบุ</span>';
+                }
+
+                document.getElementById('event-modal').classList.add('show');
+            },
+
+            // Click on empty slot → go to booking form with date
+            dateClick: function(info) {
+                window.location.href = "{% url 'booking:booking_form' %}?date=" + info.dateStr;
+            },
+
+            // Update title after render
+            datesSet: function(info) {
+                updateTitle();
+            }
         });
+
         calendar.render();
+        updateTitle();
 
-        document.getElementById('room-filter').addEventListener('change', function() {
-          calendar.refetchEvents();
+        // ---- Custom Title ----
+        function updateTitle() {
+            var view = calendar.view;
+            var titleEl = document.getElementById('cal-title');
+            if (view.type === 'dayGridMonth') {
+                titleEl.textContent = calendar.view.title;
+            } else if (view.type === 'timeGridDay') {
+                var d = view.currentStart;
+                var opts = { day: 'numeric', month: 'long', year: 'numeric' };
+                titleEl.textContent = d.toLocaleDateString('th-TH', opts);
+            } else {
+                // Week view
+                var s = view.currentStart;
+                var e = new Date(view.currentEnd);
+                e.setDate(e.getDate() - 1); // currentEnd is exclusive
+                var monthNames = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+                var sMonth = monthNames[s.getMonth()];
+                var eMonth = monthNames[e.getMonth()];
+                var year = s.getFullYear() + 543; // Buddhist Era
+
+                if (s.getMonth() === e.getMonth()) {
+                    titleEl.textContent = s.getDate() + ' - ' + e.getDate() + ' ' + sMonth + ' ' + year;
+                } else {
+                    titleEl.textContent = s.getDate() + ' ' + sMonth + ' - ' + e.getDate() + ' ' + eMonth + ' ' + year;
+                }
+            }
+        }
+
+        // ---- Prev / Next ----
+        document.getElementById('btn-prev').addEventListener('click', function() {
+            calendar.prev();
+        });
+        document.getElementById('btn-next').addEventListener('click', function() {
+            calendar.next();
         });
 
-        // Toast auto-dismiss
-        const c = document.getElementById('toast-container');
-        if (c) { setTimeout(function () { c.classList.add('home-toast-hide'); setTimeout(function () { c.remove(); }, 500); }, 3000); }
-      });
+        // ---- View Toggle ----
+        document.querySelectorAll('.cal-view-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.cal-view-btn').forEach(function(b) { b.classList.remove('active'); });
+                this.classList.add('active');
+                calendar.changeView(this.dataset.view);
+            });
+        });
+
+        // ---- Room Filter Pills ----
+        document.querySelectorAll('.cal-room-pill').forEach(function(pill) {
+            pill.addEventListener('click', function() {
+                document.querySelectorAll('.cal-room-pill').forEach(function(p) { p.classList.remove('active'); });
+                this.classList.add('active');
+                currentRoom = this.dataset.room;
+                calendar.refetchEvents();
+            });
+        });
+
+        // ---- Modal Close ----
+        document.getElementById('modal-close').addEventListener('click', function() {
+            document.getElementById('event-modal').classList.remove('show');
+        });
+        document.getElementById('event-modal').addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('show');
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') document.getElementById('event-modal').classList.remove('show');
+        });
+
+        // ---- Toast auto-dismiss ----
+        var tc = document.getElementById('toast-container');
+        if (tc) {
+            setTimeout(function() {
+                tc.classList.add('home-toast-hide');
+                setTimeout(function() { tc.remove(); }, 500);
+            }, 3000);
+        }
+    });
     </script>
+    <script src="{% static 'booking/motion.js' %}"></script>
 </body>
 </html>

@@ -449,6 +449,14 @@ def calendar_events_api(request):
         start_t = booking.start_time.strftime("%H:%M:%S")
         end_t = booking.end_time.strftime("%H:%M:%S")
 
+        # Extended props for event detail modal
+        extra_props = {
+            "room_code": booking.room.code,
+            "room_name": booking.room.name,
+            "booker_name": booking.booker_name or booking.booker_id,
+            "status": booking.status,
+        }
+
         days_of_week = booking.days_of_week
         effective_start = max(booking.start_date, range_start)
         effective_end = min(booking.end_date, range_end)
@@ -464,6 +472,7 @@ def calendar_events_api(request):
                         "backgroundColor": bg,
                         "borderColor": border,
                         "textColor": text,
+                        "extendedProps": extra_props,
                     })
                 current += timedelta(days=1)
         else:
@@ -474,6 +483,7 @@ def calendar_events_api(request):
                 "backgroundColor": bg,
                 "borderColor": border,
                 "textColor": text,
+                "extendedProps": extra_props,
             })
 
     return JsonResponse(events, safe=False)
