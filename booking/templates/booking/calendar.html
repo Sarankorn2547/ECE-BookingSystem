@@ -671,12 +671,38 @@
                     statusEl.innerHTML = '<span class="ece-badge" style="background:#e5e7eb;color:#374151;">ไม่ระบุ</span>';
                 }
 
+                // Update the "Book this room" link to prefill room and date
+                var bookingUrl = "{% url 'booking:booking_form' %}";
+                var params = [];
+                if (props.room_id) {
+                    params.push("room=" + encodeURIComponent(props.room_id));
+                }
+                if (startDt) {
+                    // Extract YYYY-MM-DD
+                    var yyyy = startDt.getFullYear();
+                    var mm = String(startDt.getMonth() + 1).padStart(2, '0');
+                    var dd = String(startDt.getDate()).padStart(2, '0');
+                    params.push("date=" + yyyy + "-" + mm + "-" + dd);
+                }
+                if (params.length > 0) {
+                    bookingUrl += "?" + params.join("&");
+                }
+                // Update the footer href
+                var footerLink = document.querySelector('#event-modal .cal-modal-footer a');
+                if (footerLink) {
+                    footerLink.href = bookingUrl;
+                }
+
                 document.getElementById('event-modal').classList.add('show');
             },
 
             // Click on empty slot → go to booking form with date
             dateClick: function(info) {
-                window.location.href = "{% url 'booking:booking_form' %}?date=" + info.dateStr;
+                var url = "{% url 'booking:booking_form' %}?date=" + info.dateStr;
+                if (currentRoom) {
+                    url += "&room_code=" + encodeURIComponent(currentRoom);
+                }
+                window.location.href = url;
             },
 
             // Update title after render
@@ -740,6 +766,17 @@
                 this.classList.add('active');
                 currentRoom = this.dataset.room;
                 calendar.refetchEvents();
+
+                // Update the "สร้างการจองใหม่" (Create new booking) button link
+                var createBtn = document.querySelector('.cal-controls-right a');
+                if (createBtn) {
+                    var baseUrl = "{% url 'booking:booking_form' %}";
+                    if (currentRoom) {
+                        createBtn.href = baseUrl + "?room_code=" + encodeURIComponent(currentRoom);
+                    } else {
+                        createBtn.href = baseUrl;
+                    }
+                }
             });
         });
 

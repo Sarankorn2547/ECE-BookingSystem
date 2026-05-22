@@ -346,10 +346,34 @@ def booking_form_view(request):
             messages.error(request, "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง")
             return redirect("booking:booking_form")
 
+    initial_date = request.GET.get('date', '')
+    if initial_date:
+        initial_date = initial_date[:10]
+    else:
+        from django.utils import timezone
+        initial_date = timezone.localtime(timezone.now()).date().isoformat()
+
+    selected_room_id = None
+    room_param = request.GET.get('room')
+    room_code_param = request.GET.get('room_code')
+    if room_param:
+        try:
+            selected_room_id = int(room_param)
+        except ValueError:
+            pass
+    elif room_code_param:
+        try:
+            selected_room = Room.objects.get(code=room_code_param)
+            selected_room_id = selected_room.id
+        except Room.DoesNotExist:
+            pass
+
     context = {
         **_base_context(request),
         "rooms": Room.objects.all().order_by("code"),
         "active_page": "booking",
+        "initial_date": initial_date,
+        "selected_room_id": selected_room_id,
     }
     return render(request, "booking/booking-form.html", context)
 
@@ -468,6 +492,7 @@ def calendar_events_api(request):
 
         # Extended props for event detail modal
         extra_props = {
+            "room_id": booking.room.id,
             "room_code": booking.room.code,
             "room_name": booking.room.name,
             "booker_name": booking.booker_name or booking.booker_id,

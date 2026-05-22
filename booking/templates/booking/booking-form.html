@@ -75,7 +75,7 @@
                             <div class="ece-room-grid">
                                 {% for room in rooms %}
                                 <div>
-                                    <input type="radio" class="btn-check" name="room" id="room{{ room.id }}" value="{{ room.id }}" autocomplete="off" {% if forloop.first %}checked{% endif %}>
+                                    <input type="radio" class="btn-check" name="room" id="room{{ room.id }}" value="{{ room.id }}" autocomplete="off" {% if selected_room_id %}{% if selected_room_id == room.id %}checked{% endif %}{% else %}{% if forloop.first %}checked{% endif %}{% endif %}>
                                     <label class="room-select-card" for="room{{ room.id }}">
                                         <div class="d-flex justify-content-between align-items-center mb-1">
                                             <span class="h5 fw-bold mb-0">{{ room.code }}</span>
