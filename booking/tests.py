@@ -196,6 +196,62 @@ class ViewAuthAndBookingTest(TestCase):
         self.assertEqual(booking.booker_id, 'testuser')
         self.assertEqual(booking.course_code, 'CN334')
 
+    def test_invalid_date_range(self):
+        # Login first
+        self.client.post(reverse('booking:login'), {
+            'username': 'testuser',
+            'password': 'test1234'
+        })
+
+        # Submit booking with end_date before start_date
+        response = self.client.post(reverse('booking:booking_form'), {
+            'room': str(self.room.id),
+            'start_date': '2026-06-05',
+            'end_date': '2026-06-01',
+            'start_time': '09:00',
+            'end_time': '11:00',
+            'purpose_type': 'COURSE',
+            'course_code': 'CN334',
+            'course_name': 'Web App Development',
+            'program': 'BACHELOR',
+            'notes': 'Normal Lecture'
+        })
+        self.assertRedirects(response, reverse('booking:booking_form'))
+        
+        # Verify no booking was created
+        bookings = Booking.objects.filter(room=self.room)
+        self.assertEqual(bookings.count(), 0)
+
+    def test_single_day_ignores_recurring(self):
+        # Login first
+        self.client.post(reverse('booking:login'), {
+            'username': 'testuser',
+            'password': 'test1234'
+        })
+
+        # Submit booking with same start/end date but days_of_week checked
+        response = self.client.post(reverse('booking:booking_form'), {
+            'room': str(self.room.id),
+            'start_date': '2026-06-01',
+            'end_date': '2026-06-01',
+            'start_time': '09:00',
+            'end_time': '11:00',
+            'purpose_type': 'COURSE',
+            'course_code': 'CN334',
+            'course_name': 'Web App Development',
+            'program': 'BACHELOR',
+            'days_of_week': ['1', '2'], # Monday, Tuesday
+            'notes': 'Normal Lecture'
+        })
+        self.assertRedirects(response, reverse('booking:dashboard'))
+        
+        # Verify booking created but days_of_week and recurring_pattern are null
+        bookings = Booking.objects.filter(room=self.room)
+        self.assertEqual(bookings.count(), 1)
+        booking = bookings.first()
+        self.assertIsNone(booking.days_of_week)
+        self.assertIsNone(booking.recurring_pattern)
+
 from django.core.management import call_command
 from django.core import mail
 

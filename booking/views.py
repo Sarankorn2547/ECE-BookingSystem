@@ -286,12 +286,20 @@ def booking_form_view(request):
             if not start_date or not start_time or not end_time:
                 raise ValueError("Invalid date/time format")
 
+            if end_date < start_date:
+                messages.error(request, "วันที่สิ้นสุดต้องไม่น้อยกว่าวันที่เริ่มต้น")
+                return redirect("booking:booking_form")
+
             if start_time >= end_time:
                 messages.error(request, "เวลาเริ่มต้นต้องน้อยกว่าเวลาสิ้นสุด")
                 return redirect("booking:booking_form")
 
-            days_of_week = [int(v) for v in days_of_week_values if v.isdigit()]
-            recurring_pattern = {"type": "weekly", "days_of_week": days_of_week} if days_of_week else None
+            if start_date == end_date:
+                days_of_week = None
+                recurring_pattern = None
+            else:
+                days_of_week = [int(v) for v in days_of_week_values if v.isdigit()]
+                recurring_pattern = {"type": "weekly", "days_of_week": days_of_week} if days_of_week else None
 
             conflict_msg = check_booking_conflict(
                 room=room,
@@ -473,7 +481,8 @@ def calendar_events_api(request):
         if days_of_week:
             current = effective_start
             while current <= effective_end:
-                if current.weekday() in days_of_week:
+                current_js_day = (current.weekday() + 1) % 7
+                if current_js_day in days_of_week:
                     events.append({
                         "title": title,
                         "start": f"{current.isoformat()}T{start_t}",

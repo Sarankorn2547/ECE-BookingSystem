@@ -174,7 +174,7 @@
                             </div>
 
                             <!-- Recurring -->
-                            <div class="mb-4">
+                            <div class="mb-4" id="recurring-section">
                                 <label class="ece-form-label d-block mb-3">จองแบบซ้ำ (Recurring Pattern)</label>
                                 <div class="ece-detail-box">
                                     <div class="d-flex flex-wrap gap-2">
@@ -286,6 +286,51 @@
                     }
                 });
             });
+
+            // Recurring Pattern show/hide logic based on date inputs
+            const startDateInput = document.querySelector('input[name="start_date"]');
+            const endDateInput = document.querySelector('input[name="end_date"]');
+            const recurringSection = document.getElementById('recurring-section');
+            const recurringCheckboxes = recurringSection ? recurringSection.querySelectorAll('input[type="checkbox"]') : [];
+
+            function updateRecurringVisibility() {
+                if (!startDateInput || !endDateInput || !recurringSection) return;
+
+                const startDateVal = startDateInput.value;
+                let endDateVal = endDateInput.value;
+
+                if (!endDateVal) {
+                    endDateVal = startDateVal;
+                }
+
+                if (startDateVal && endDateVal && startDateVal === endDateVal) {
+                    recurringSection.style.display = 'none';
+                    recurringCheckboxes.forEach(cb => {
+                        cb.checked = false;
+                    });
+                } else {
+                    recurringSection.style.display = 'block';
+                }
+            }
+
+            if (startDateInput && endDateInput) {
+                if (startDateInput.value) {
+                    endDateInput.min = startDateInput.value;
+                }
+
+                startDateInput.addEventListener('change', function() {
+                    endDateInput.min = this.value;
+                    if (endDateInput.value && endDateInput.value < this.value) {
+                        endDateInput.value = this.value;
+                    }
+                    updateRecurringVisibility();
+                });
+
+                endDateInput.addEventListener('change', updateRecurringVisibility);
+
+                // Run initially
+                updateRecurringVisibility();
+            }
         });
     </script>
     <script src="{% static 'booking/motion.js' %}"></script>
