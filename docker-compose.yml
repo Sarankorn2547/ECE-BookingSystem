@@ -66,6 +66,24 @@ services:
     networks:
       - ece-network
 
+  ece-bot:
+    build:
+      context: ./teams-bot
+      dockerfile: Dockerfile
+    container_name: ece-bot
+    volumes:
+      - ./teams-bot:/app
+    env_file: .env
+    ports:
+      - "8002:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ece-network
+    labels:
+      - "com.ece.allow_logs=true"
+
 networks:
   ece-network:
     driver: bridge

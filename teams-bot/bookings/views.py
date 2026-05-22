@@ -3,9 +3,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .nlp_service import parse_booking_request
-from .models import Room, Booking
-from datetime import datetime, time
+from .models import Room, Booking, BlackoutPeriod, BookingLog
+from datetime import datetime, time, timedelta
 import pytz
+from django.db.models import Q
 
 TZ = pytz.timezone('Asia/Bangkok')
 
@@ -22,9 +23,80 @@ HELP_TEXT = (
     "**❌ ยกเลิกการจอง**\n"
     "• ยกเลิกการจองห้อง 406-3 พรุ่งนี้\n\n"
     "**🔑 Admin**\n"
-    "• อนุมัติ #5 — อนุมัติ booking ID 5\n"
-    "• ปฏิเสธ #5 เหตุผล... — ปฏิเสธพร้อมเหตุผล"
+    "• อนุมัติ #รหัส — อนุมัติ booking ID (ระบุรหัสเต็มหรือท้ายรหัสให้ไม่ซ้ำ)\n"
+    "• ปฏิเสธ #รหัส เหตุผล... — ปฏิเสธพร้อมเหตุผล"
 )
+
+
+def check_booking_conflict(room, start_date, end_date, start_time, end_time, days_of_week=None, exclude_booking_id=None):
+    # 1. Check against Blackout Periods
+    blackouts = BlackoutPeriod.objects.filter(
+        Q(room=room) | Q(room__isnull=True),
+        start_date__lte=end_date,
+        end_date__gte=start_date
+    )
+
+    if days_of_week:
+        proposed_days = set(int(d) for d in days_of_week)
+    else:
+        proposed_days = None
+
+    for bp in blackouts:
+        o_start = max(start_date, bp.start_date)
+        o_end = min(end_date, bp.end_date)
+
+        has_active_date = False
+        if proposed_days:
+            curr = o_start
+            while curr <= o_end:
+                curr_js_day = (curr.weekday() + 1) % 7
+                if curr_js_day in proposed_days:
+                    has_active_date = True
+                    break
+                curr += timedelta(days=1)
+        else:
+            if o_start <= start_date <= o_end:
+                has_active_date = True
+
+        if has_active_date:
+            bp_start_time = bp.start_time or time(0, 0)
+            bp_end_time = bp.end_time or time(23, 59, 59)
+            if max(start_time, bp_start_time) < min(end_time, bp_end_time):
+                return f"ชนกับช่วงเวลาปิดปรับปรุง/วันหยุด: {bp.title}"
+
+    # 2. Check against existing PENDING/APPROVED bookings
+    bookings = Booking.objects.filter(
+        room=room,
+        status__in=['PENDING', 'APPROVED'],
+        start_date__lte=end_date,
+        end_date__gte=start_date
+    )
+    if exclude_booking_id:
+        bookings = bookings.exclude(id=exclude_booking_id)
+
+    for b in bookings:
+        o_start = max(start_date, b.start_date)
+        o_end = min(end_date, b.end_date)
+
+        b_days = set(b.days_of_week) if b.days_of_week else None
+
+        has_active_date = False
+        curr = o_start
+        while curr <= o_end:
+            proposed_active = (not proposed_days) or ((curr.weekday() + 1) % 7 in proposed_days)
+            existing_active = (not b_days) or ((curr.weekday() + 1) % 7 in b_days)
+
+            if proposed_active and existing_active:
+                has_active_date = True
+                break
+            curr += timedelta(days=1)
+
+        if has_active_date:
+            if max(start_time, b.start_time) < min(end_time, b.end_time):
+                desc = f"{b.course_code or ''} {b.course_name or b.training_title or ''}".strip()
+                return f"ชนกับการจองที่มีอยู่แล้วของ {b.booker_name or b.booker_id} ({desc or 'ไม่มีชื่อวิชา/หัวข้อ'}) ช่วง {b.start_time.strftime('%H:%M')}-{b.end_time.strftime('%H:%M')}"
+
+    return None
 
 
 class NLPParseView(APIView):
@@ -52,10 +124,10 @@ class NLPParseView(APIView):
         if re.match(r'^help$', clean_text, flags=re.IGNORECASE):
             return Response({"type": "message", "text": HELP_TEXT})
 
-        # Admin commands: อนุมัติ #5 / ปฏิเสธ #5 เหตุผล
-        admin_match = re.match(r'^(อนุมัติ|ปฏิเสธ)\s+#?(\d+)(?:\s+(.+))?$', clean_text.strip())
+        # Admin commands: อนุมัติ #id / ปฏิเสธ #id เหตุผล
+        admin_match = re.match(r'^(อนุมัติ|ปฏิเสธ)\s+#?([a-fA-F0-9\-]+)(?:\s+(.+))?$', clean_text.strip())
         if admin_match:
-            action, booking_id, reason = admin_match.group(1), int(admin_match.group(2)), admin_match.group(3) or ''
+            action, booking_id, reason = admin_match.group(1), admin_match.group(2).strip(), admin_match.group(3) or ''
             new_status = 'APPROVED' if action == 'อนุมัติ' else 'REJECTED'
             return self.handle_admin_action(booking_id, new_status, reason, username)
 
@@ -90,43 +162,75 @@ class NLPParseView(APIView):
         purpose = result.get('purpose', '')
 
         save_status = "error"
+        conflict_msg = ""
         if room_id and date_str and start_time_str and end_time_str:
             try:
-                room = Room.objects.get(room_id=room_id)
-                start_dt = TZ.localize(datetime.strptime(f"{date_str} {start_time_str}", "%Y-%m-%d %H:%M"))
-                end_dt = TZ.localize(datetime.strptime(f"{date_str} {end_time_str}", "%Y-%m-%d %H:%M"))
+                room = Room.objects.get(code=room_id)
+                target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                start_time = datetime.strptime(start_time_str, "%H:%M").time()
+                end_time = datetime.strptime(end_time_str, "%H:%M").time()
 
-                conflicts = Booking.objects.filter(
+                conflict_msg = check_booking_conflict(
                     room=room,
-                    status__in=['APPROVED', 'PENDING'],
-                    start_time__lt=end_dt,
-                    end_time__gt=start_dt
+                    start_date=target_date,
+                    end_date=target_date,
+                    start_time=start_time,
+                    end_time=end_time
                 )
 
-                if conflicts.exists():
+                if conflict_msg:
                     save_status = "conflict"
                 else:
-                    Booking.objects.create(
+                    # Auto-parse course code from purpose
+                    purpose_type = 'TRAINING'
+                    course_code = None
+                    course_name = None
+                    training_title = None
+                    
+                    course_match = re.search(r'([A-Z]{2,3})\s*(\d{3})', purpose, re.IGNORECASE)
+                    if course_match:
+                        purpose_type = 'COURSE'
+                        course_code = f"{course_match.group(1).upper()}{course_match.group(2)}"
+                        course_name = purpose
+                    else:
+                        training_title = purpose or "จองผ่าน Teams Bot"
+
+                    booking = Booking.objects.create(
                         room=room,
-                        user_name=username,
-                        start_time=start_dt,
-                        end_time=end_dt,
-                        purpose=purpose,
+                        booker_id=username,
+                        booker_name=username,
+                        purpose_type=purpose_type,
+                        course_code=course_code,
+                        course_name=course_name,
+                        training_title=training_title,
+                        start_date=target_date,
+                        end_date=target_date,
+                        start_time=start_time,
+                        end_time=end_time,
+                        notes=purpose,
                         status='PENDING',
                         teams_service_url=teams_context.get('service_url', ''),
                         teams_conversation_id=teams_context.get('conversation_id', ''),
                         teams_activity_id=teams_context.get('activity_id', ''),
                     )
+                    
+                    # Create log
+                    BookingLog.objects.create(
+                        booking=booking,
+                        action="CREATED",
+                        actor=username
+                    )
                     save_status = "success"
             except Room.DoesNotExist:
                 save_status = "room_not_found"
-            except Exception:
+            except Exception as e:
+                print(f"DEBUG Error in create booking: {str(e)}", flush=True)
                 save_status = "error"
 
         if save_status == "success":
             msg = f"✅ **จองห้องสำเร็จ (รออนุมัติ)**\n\n"
         elif save_status == "conflict":
-            msg = f"❌ **จองไม่สำเร็จ: ห้องไม่ว่าง**\n\n"
+            msg = f"❌ **จองไม่สำเร็จ: {conflict_msg}**\n\n"
         elif save_status == "room_not_found":
             msg = f"❌ **จองไม่สำเร็จ: ไม่พบห้อง {room_id}**\n\n"
         else:
@@ -147,30 +251,54 @@ class NLPParseView(APIView):
 
         try:
             target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-            rooms = Room.objects.all()
+            rooms = Room.objects.all().order_by('code')
             msg = f"🔍 **รายการห้องว่างวันที่ {date_str}**\n\n"
 
             for room in rooms:
-                day_start = TZ.localize(datetime.combine(target_date, time(8, 0)))
-                day_end = TZ.localize(datetime.combine(target_date, time(18, 0)))
+                day_start = time(8, 0)
+                day_end = time(18, 0)
+                
+                # Check blackout periods affecting this day
+                blackouts = BlackoutPeriod.objects.filter(
+                    Q(room=room) | Q(room__isnull=True),
+                    start_date__lte=target_date,
+                    end_date__gte=target_date
+                )
+                
+                # Check bookings active on this day
                 bookings = Booking.objects.filter(
                     room=room,
                     status__in=['APPROVED', 'PENDING'],
-                    start_time__date=target_date
+                    start_date__lte=target_date,
+                    end_date__gte=target_date
                 ).order_by('start_time')
+
+                blocked_intervals = []
+                # Add blackouts as blocked intervals
+                for bp in blackouts:
+                    bp_start = bp.start_time or time(0, 0)
+                    bp_end = bp.end_time or time(23, 59, 59)
+                    blocked_intervals.append((bp_start, bp_end, f"ปิดปรับปรุง: {bp.title}"))
+                
+                # Add bookings as blocked intervals
+                for b in bookings:
+                    desc = f"{b.course_code or ''} {b.course_name or b.training_title or ''}".strip() or "จองแล้ว"
+                    blocked_intervals.append((b.start_time, b.end_time, desc))
+
+                # Sort blocked intervals by start time
+                blocked_intervals.sort(key=lambda x: x[0])
 
                 free_slots = []
                 current_time = day_start
-                for b in bookings:
-                    b_start = b.start_time.astimezone(TZ)
-                    if b_start > current_time:
-                        free_slots.append(f"{current_time.strftime('%H:%M')}-{b_start.strftime('%H:%M')}")
-                    current_time = max(current_time, b.end_time.astimezone(TZ))
+                for start, end, label in blocked_intervals:
+                    if start > current_time:
+                        free_slots.append(f"{current_time.strftime('%H:%M')}-{start.strftime('%H:%M')}")
+                    current_time = max(current_time, end)
                 if current_time < day_end:
                     free_slots.append(f"{current_time.strftime('%H:%M')}-{day_end.strftime('%H:%M')}")
 
                 slots_text = ", ".join(free_slots) if free_slots else "❌ เต็มทุกช่วงเวลา"
-                msg += f"🚪 **ห้อง {room.room_id}**: {slots_text}\n\n"
+                msg += f"🚪 **ห้อง {room.code}**: {slots_text}\n\n"
 
             return Response({"type": "message", "text": msg})
         except Exception as e:
@@ -184,24 +312,43 @@ class NLPParseView(APIView):
             return Response({"type": "message", "text": "❓ กรุณาระบุเลขห้องและวันที่ครับ เช่น 'ห้อง 406-3 พรุ่งนี้ว่างช่วงไหนบ้าง'"})
 
         try:
-            room = Room.objects.get(room_id=room_id)
+            room = Room.objects.get(code=room_id)
             target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-            day_start = TZ.localize(datetime.combine(target_date, time(8, 0)))
-            day_end = TZ.localize(datetime.combine(target_date, time(18, 0)))
+            day_start = time(8, 0)
+            day_end = time(18, 0)
 
+            # Check blackout periods affecting this day
+            blackouts = BlackoutPeriod.objects.filter(
+                Q(room=room) | Q(room__isnull=True),
+                start_date__lte=target_date,
+                end_date__gte=target_date
+            )
+
+            # Check bookings active on this day
             bookings = Booking.objects.filter(
                 room=room,
                 status__in=['APPROVED', 'PENDING'],
-                start_time__date=target_date
+                start_date__lte=target_date,
+                end_date__gte=target_date
             ).order_by('start_time')
+
+            blocked_intervals = []
+            for bp in blackouts:
+                bp_start = bp.start_time or time(0, 0)
+                bp_end = bp.end_time or time(23, 59, 59)
+                blocked_intervals.append((bp_start, bp_end, f"ปิดปรับปรุง: {bp.title}"))
+            for b in bookings:
+                desc = f"{b.course_code or ''} {b.course_name or b.training_title or ''}".strip() or "จองแล้ว"
+                blocked_intervals.append((b.start_time, b.end_time, desc))
+
+            blocked_intervals.sort(key=lambda x: x[0])
 
             free_slots = []
             current_time = day_start
-            for b in bookings:
-                b_start = b.start_time.astimezone(TZ)
-                if b_start > current_time:
-                    free_slots.append(f"{current_time.strftime('%H:%M')}-{b_start.strftime('%H:%M')}")
-                current_time = max(current_time, b.end_time.astimezone(TZ))
+            for start, end, label in blocked_intervals:
+                if start > current_time:
+                    free_slots.append(f"{current_time.strftime('%H:%M')}-{start.strftime('%H:%M')}")
+                current_time = max(current_time, end)
             if current_time < day_end:
                 free_slots.append(f"{current_time.strftime('%H:%M')}-{day_end.strftime('%H:%M')}")
 
@@ -211,11 +358,11 @@ class NLPParseView(APIView):
             else:
                 msg += "❌ เต็มทุกช่วงเวลา (08:00-18:00)"
 
-            if bookings.exists():
-                msg += "\n\n**ช่วงที่จองแล้ว:**\n\n"
+            if blocked_intervals:
+                msg += "\n\n**ช่วงที่ไม่ว่าง:**\n\n"
                 msg += "\n\n".join(
-                    f"🔴 {b.start_time.astimezone(TZ).strftime('%H:%M')}-{b.end_time.astimezone(TZ).strftime('%H:%M')} ({b.purpose or '-'})"
-                    for b in bookings
+                    f"🔴 {start.strftime('%H:%M')}-{end.strftime('%H:%M')} ({label})"
+                    for start, end, label in blocked_intervals
                 )
 
             return Response({"type": "message", "text": msg})
@@ -226,24 +373,28 @@ class NLPParseView(APIView):
 
     def handle_my_bookings(self, username):
         now = datetime.now(TZ)
+        current_date = now.date()
+        current_time = now.time()
+        
+        # We want bookings where end_date > current_date OR (end_date == current_date and end_time >= current_time)
         bookings = Booking.objects.filter(
-            user_name=username,
-            end_time__gte=now,
+            booker_id=username,
             status__in=['PENDING', 'APPROVED']
-        ).order_by('start_time')[:10]
+        ).filter(
+            Q(end_date__gt=current_date) | Q(end_date=current_date, end_time__gte=current_time)
+        ).order_by('start_date', 'start_time')[:10]
 
         if not bookings.exists():
             return Response({"type": "message", "text": f"📋 ไม่พบการจองที่ค้างอยู่ของคุณครับ"})
 
         msg = f"📋 **การจองของ {username}**\n\n"
         for b in bookings:
-            start_local = b.start_time.astimezone(TZ)
-            end_local = b.end_time.astimezone(TZ)
             icon = "⏳" if b.status == 'PENDING' else "✅"
+            desc = f"{b.course_code or ''} {b.course_name or b.training_title or ''}".strip() or "-"
             msg += (
-                f"{icon} **#{b.id}** ห้อง **{b.room.room_id}**\n"
-                f"   📅 {start_local.strftime('%d/%m/%Y')}  ⏰ {start_local.strftime('%H:%M')}-{end_local.strftime('%H:%M')}\n"
-                f"   📌 {b.purpose or '-'}  ({b.get_status_display()})\n\n"
+                f"{icon} **#{b.id}** ห้อง **{b.room.code}**\n"
+                f"   📅 {b.start_date.strftime('%d/%m/%Y')}  ⏰ {b.start_time.strftime('%H:%M')}-{b.end_time.strftime('%H:%M')}\n"
+                f"   📌 {desc}  ({b.get_status_display()})\n\n"
             )
         return Response({"type": "message", "text": msg.strip()})
 
@@ -255,38 +406,64 @@ class NLPParseView(APIView):
             return Response({"type": "message", "text": "❓ กรุณาระบุห้องและวันที่ที่ต้องการยกเลิกครับ เช่น 'ยกเลิกการจองห้อง 406-3 พรุ่งนี้'"})
 
         try:
+            target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
             bookings = Booking.objects.filter(
-                room__room_id=room_id,
-                user_name=username,
-                start_time__date=date_str,
+                room__code=room_id,
+                booker_id=username,
+                start_date=target_date,
                 status__in=['PENDING', 'APPROVED']
             )
             if not bookings.exists():
                 return Response({"type": "message", "text": f"❓ ไม่พบการจองห้อง **{room_id}** วันที่ **{date_str}** ของคุณครับ"})
 
             count = bookings.count()
-            bookings.delete()
+            for b in bookings:
+                b.status = 'CANCELLED'
+                b.save()
+                
+                # Log action
+                BookingLog.objects.create(
+                    booking=b,
+                    action="CANCELLED",
+                    actor=username
+                )
             return Response({"type": "message", "text": f"✅ ยกเลิกการจองห้อง **{room_id}** วันที่ **{date_str}** แล้วครับ ({count} รายการ)"})
         except Exception as e:
             return Response({"type": "message", "text": f"⚠️ เกิดข้อผิดพลาด: {str(e)}"})
 
     def handle_admin_action(self, booking_id, new_status, reason, admin_name):
         try:
-            booking = Booking.objects.get(id=booking_id)
+            # Handle UUID or partial UUID matching
+            if len(booking_id) < 36:
+                bookings = Booking.objects.filter(id__icontains=booking_id)
+                if bookings.count() == 1:
+                    booking = bookings.first()
+                elif bookings.count() > 1:
+                    return Response({"type": "message", "text": f"❓ พบหลาย Booking ที่ตรงกับ #{booking_id} กรุณาระบุรหัสเต็ม"})
+                else:
+                    return Response({"type": "message", "text": f"❓ ไม่พบ Booking #{booking_id} ครับ"})
+            else:
+                booking = Booking.objects.get(id=booking_id)
+
             booking.status = new_status
             booking.save()
 
-            status_text = "✅ อนุมัติแล้ว" if new_status == 'APPROVED' else "❌ ปฏิเสธแล้ว"
-            start_local = booking.start_time.astimezone(TZ)
-            end_local = booking.end_time.astimezone(TZ)
+            # Create log
+            BookingLog.objects.create(
+                booking=booking,
+                action=new_status,
+                actor=admin_name,
+                metadata={"reason": reason} if reason else None
+            )
 
+            status_text = "✅ อนุมัติแล้ว" if new_status == 'APPROVED' else "❌ ปฏิเสธแล้ว"
             msg = (
-                f"{status_text} **Booking #{booking_id}**\n\n"
-                f"👤 ผู้จอง: {booking.user_name}\n\n"
-                f"🏢 ห้อง: {booking.room.room_id}\n\n"
-                f"📅 วันที่: {start_local.strftime('%d/%m/%Y')}\n\n"
-                f"⏰ เวลา: {start_local.strftime('%H:%M')}-{end_local.strftime('%H:%M')}\n\n"
-                f"📌 วัตถุประสงค์: {booking.purpose or '-'}\n\n"
+                f"{status_text} **Booking #{booking.id}**\n\n"
+                f"👤 ผู้จอง: {booking.booker_name or booking.booker_id}\n\n"
+                f"🏢 ห้อง: {booking.room.code}\n\n"
+                f"📅 วันที่: {booking.start_date.strftime('%d/%m/%Y')}\n\n"
+                f"⏰ เวลา: {booking.start_time.strftime('%H:%M')}-{booking.end_time.strftime('%H:%M')}\n\n"
+                f"📌 วัตถุประสงค์: {booking.course_code or booking.training_title or '-'}\n\n"
                 f"👨‍💼 โดย: {admin_name}"
             )
             if reason:

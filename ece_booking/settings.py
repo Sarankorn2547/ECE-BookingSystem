@@ -53,7 +53,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "ece_booking.wsgi.application"
 
+import sys
+
 # SQLite (local dev) หรือ PostgreSQL (production) — auto-detect
+# ใช้ SQLite เสมอสำหรับการรัน unit test หรือเมื่อตั้งใจใช้ SQLite
+use_sqlite = (
+    os.getenv("USE_SQLITE", "False").lower() in ("true", "1", "yes")
+    or "test" in sys.argv
+)
+
 try:
     import psycopg
     has_postgres_adapter = True
@@ -64,7 +72,7 @@ except ImportError:
     except ImportError:
         has_postgres_adapter = False
 
-if not has_postgres_adapter:
+if use_sqlite or not has_postgres_adapter:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",

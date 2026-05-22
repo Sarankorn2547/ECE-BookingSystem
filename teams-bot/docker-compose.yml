@@ -1,13 +1,10 @@
-version: '3.8'
-
 services:
   web:
     build: .
     volumes:
       - .:/app
-    environment:
-      - TYPHOON_API_KEY=${TYPHOON_API_KEY}
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+    env_file:
+      - .env
     expose:
       - 8000
     networks:

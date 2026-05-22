@@ -23,11 +23,26 @@ rsync -avz -e "ssh -p $VPS_PORT" \
 # Run docker-compose on VPS
 ssh -p $VPS_PORT "$VPS_USER@$VPS_IP" << EOF
     cd $REMOTE_DIR
-    # Make sure .env exists, or create from .env.example if it doesn't (manual step usually better)
+    # Make sure .env exists, or create from .env.example if it doesn't
     if [ ! -f .env ]; then
-        echo "⚠️ .env file missing on VPS. Please create it at $REMOTE_DIR/.env"
-        # cp .env.example .env # Optional: auto-copy but user needs to edit it
+        if [ -f .env.example ]; then
+            cp .env.example .env
+        else
+            touch .env
+        fi
     fi
+
+    # Merge DB credentials from the main project's .env if it exists
+    if [ -f ../ECE-BookingSystem/.env ]; then
+        echo "🔑 Found ECE-BookingSystem/.env, merging database configurations..."
+        grep -E '^(POSTGRES_|SQL_)' ../ECE-BookingSystem/.env | while read -r line; do
+            var_name=\$(echo "\$line" | cut -d'=' -f1)
+            # Remove existing variable from .env
+            sed -i "/^\$var_name=/d" .env 2>/dev/null || sed -i "" "/^\$var_name=/d" .env
+            echo "\$line" >> .env
+        done
+    fi
+
     docker compose up -d --build
     # Run migrations
     docker compose exec -T web python manage.py migrate

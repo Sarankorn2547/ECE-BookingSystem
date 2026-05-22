@@ -1,10 +1,17 @@
 import os
+import importlib.util
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load local .env
+load_dotenv(BASE_DIR / ".env")
+
+# Try to load parent .env if it exists (for integration when nested)
+parent_env = BASE_DIR.parent / ".env"
+if parent_env.exists():
+    load_dotenv(parent_env)
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-default-key-for-dev')
 
@@ -55,12 +62,34 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'room_booking.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Try importing postgres adapter, fallback to sqlite3 if not present and SQL_HOST not set (local dev environment)
+has_postgres_adapter = (
+    importlib.util.find_spec("psycopg") is not None or
+    importlib.util.find_spec("psycopg2") is not None
+)
+
+postgres_host = os.getenv("SQL_HOST")
+if postgres_host == "db":
+    postgres_host = "ece-db"  # the container name on the external network
+
+if has_postgres_adapter and (os.getenv("POSTGRES_DB") or postgres_host):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("POSTGRES_DB", "postgres"),
+            "USER": os.getenv("POSTGRES_USER", "postgres"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
+            "HOST": postgres_host or "ece-db",
+            "PORT": os.getenv("SQL_PORT", "5432"),
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

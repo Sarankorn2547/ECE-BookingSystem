@@ -195,3 +195,115 @@ class ViewAuthAndBookingTest(TestCase):
         self.assertEqual(booking.status, Booking.Status.PENDING)
         self.assertEqual(booking.booker_id, 'testuser')
         self.assertEqual(booking.course_code, 'CN334')
+
+from django.core.management import call_command
+from django.core import mail
+
+class SendRemindersCommandTest(TestCase):
+    def setUp(self):
+        self.room = Room.objects.create(
+            code="406-3",
+            name="ห้องประชุม 1",
+            type=Room.RoomType.MEETING,
+            capacity=60
+        )
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="testuser@example.com",
+            password="testpassword"
+        )
+        UserProfile.objects.create(
+            tu_uid="testuser",
+            username="testuser",
+            role=UserProfile.Role.LECTURER
+        )
+
+    def test_send_reminders_command(self):
+        tomorrow = date.today() + timedelta(days=1)
+        # Create an approved booking for tomorrow
+        Booking.objects.create(
+            room=self.room,
+            booker_id="testuser",
+            booker_name="Test User",
+            purpose_type=Booking.PurposeType.COURSE,
+            start_date=tomorrow,
+            end_date=tomorrow,
+            start_time=time(9, 0),
+            end_time=time(11, 0),
+            status=Booking.Status.APPROVED
+        )
+
+        # Clear outbox
+        mail.outbox = []
+
+        # Run command
+        call_command('send_reminders')
+
+        # Assert email sent
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertIn("แจ้งเตือน: สิทธิ์การเข้าใช้งานห้อง 406-3 ในวันพรุ่งนี้", email.subject)
+        self.assertEqual(email.to, ["testuser@example.com"])
+
+class AdminReportsViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.room = Room.objects.create(
+            code="406-3",
+            name="ห้องประชุม 1",
+            type=Room.RoomType.MEETING,
+            capacity=60
+        )
+        self.user = User.objects.create_user(
+            username="admin",
+            email="admin@example.com",
+            password="adminpassword"
+        )
+        UserProfile.objects.create(
+            tu_uid="admin",
+            username="admin",
+            role=UserProfile.Role.ADMIN
+        )
+
+    def test_admin_reports_view_populates_stats(self):
+        # Login admin via mock login
+        self.client.post(reverse('booking:login'), {
+            'username': 'admin',
+            'password': 'admin1234'
+        })
+
+        # Create some bookings in the range of the current month
+        today = date.today()
+        # Approved Course booking
+        Booking.objects.create(
+            room=self.room,
+            booker_id="testuser",
+            booker_name="Test User",
+            purpose_type=Booking.PurposeType.COURSE,
+            program=Booking.ProgramType.BACHELOR,
+            start_date=today,
+            end_date=today,
+            start_time=time(9, 0),
+            end_time=time(11, 0),
+            status=Booking.Status.APPROVED
+        )
+        # Approved Training booking
+        Booking.objects.create(
+            room=self.room,
+            booker_id="testuser2",
+            booker_name="Test User 2",
+            purpose_type=Booking.PurposeType.TRAINING,
+            start_date=today,
+            end_date=today,
+            start_time=time(13, 0),
+            end_time=time(15, 0),
+            status=Booking.Status.APPROVED
+        )
+
+        response = self.client.get(reverse('booking:admin_reports'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('purpose_stats', response.context)
+        self.assertIn('program_stats', response.context)
+        self.assertEqual(response.context['purpose_stats']['COURSE'], 1)
+        self.assertEqual(response.context['purpose_stats']['TRAINING'], 1)
+        self.assertEqual(response.context['program_stats']['BACHELOR'], 1)

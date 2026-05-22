@@ -23,6 +23,7 @@ from .emails import (
     notify_booking_rejected,
     notify_booking_cancelled,
 )
+from .utils import check_booking_conflict
 
 logger = logging.getLogger(__name__)
 
@@ -283,19 +284,21 @@ def booking_form_view(request):
                 messages.error(request, "เวลาเริ่มต้นต้องน้อยกว่าเวลาสิ้นสุด")
                 return redirect("booking:booking_form")
 
-            conflict_filter = Q(start_time__lt=end_time, end_time__gt=start_time)
-            conflicts = Booking.objects.filter(
-                room=room,
-                start_date=start_date,
-                status__in=[Booking.Status.PENDING, Booking.Status.APPROVED],
-            ).filter(conflict_filter)
-
-            if conflicts.exists():
-                messages.error(request, f"ห้อง {room.code} มีการใช้งานแล้วในช่วงเวลานี้")
-                return redirect("booking:booking_form")
-
             days_of_week = [int(v) for v in days_of_week_values if v.isdigit()]
             recurring_pattern = {"type": "weekly", "days_of_week": days_of_week} if days_of_week else None
+
+            conflict_msg = check_booking_conflict(
+                room=room,
+                start_date=start_date,
+                end_date=end_date,
+                start_time=start_time,
+                end_time=end_time,
+                days_of_week=days_of_week
+            )
+
+            if conflict_msg:
+                messages.error(request, f"ไม่สามารถจองได้: {conflict_msg}")
+                return redirect("booking:booking_form")
 
             tu_profile = request.session.get("tu_profile", {})
             new_booking = Booking.objects.create(
@@ -617,6 +620,14 @@ def admin_reports_view(request):
             "utilization": utilization,
         })
 
+    purpose_stats = {"COURSE": 0, "TRAINING": 0}
+    program_stats = {"BACHELOR": 0, "MASTER": 0, "TEP_TEPE": 0, "TU_PINE": 0}
+    for b in approved_bookings:
+        if b.purpose_type in purpose_stats:
+            purpose_stats[b.purpose_type] += 1
+        if b.program in program_stats:
+            program_stats[b.program] += 1
+
     context = {
         **_base_context(request),
         "active_page": "admin_reports",
@@ -626,6 +637,8 @@ def admin_reports_view(request):
         "rejected_count": status_counts.get("REJECTED", 0),
         "cancelled_count": status_counts.get("CANCELLED", 0),
         "room_stats": room_stats,
+        "purpose_stats": purpose_stats,
+        "program_stats": program_stats,
         "start_date": start_date,
         "end_date": end_date,
         "weekdays_count": weekdays_count,
