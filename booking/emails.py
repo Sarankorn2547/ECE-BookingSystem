@@ -99,6 +99,30 @@ def notify_booking_rejected(booking, reason: str = "") -> None:
     _send(subject, body, booker_email)
 
 
+def notify_booking_reminder(booking, remind_date) -> None:
+    """Notify Booker 1 day before their approved booking occurs."""
+    booker_email = _get_booker_email(booking)
+    if not booker_email:
+        return
+
+    if booking.purpose_type == "COURSE":
+        detail = f"วิชา: {booking.course_code or ''} {booking.course_name or ''}".strip()
+    else:
+        detail = f"หัวข้อ: {booking.training_title or ''}"
+
+    subject = f"[จองห้อง] แจ้งเตือน — {booking.room.code} พรุ่งนี้ {remind_date.strftime('%d/%m/%Y')}"
+    body = (
+        f"แจ้งเตือนล่วงหน้า 1 วัน สำหรับการจองที่ได้รับอนุมัติของท่าน\n\n"
+        f"ห้อง   : {booking.room.code}\n"
+        f"วันที่  : {remind_date.strftime('%d/%m/%Y')} (พรุ่งนี้)\n"
+        f"เวลา   : {booking.start_time.strftime('%H:%M')} - {booking.end_time.strftime('%H:%M')}\n"
+        f"{detail}\n"
+        f"หมายเหตุ: {booking.notes or '-'}\n\n"
+        f"ขอบคุณที่ใช้บริการ ระบบจองห้อง ECE"
+    )
+    _send(subject, body, booker_email)
+
+
 def notify_booking_cancelled(booking) -> None:
     """Notify Admin when a booking is cancelled by the booker."""
     admin_email = settings.ADMIN_EMAIL

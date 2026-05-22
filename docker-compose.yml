@@ -66,6 +66,22 @@ services:
     networks:
       - ece-network
 
+  ece-cron:
+    build: .
+    container_name: ece-cron
+    entrypoint: ["/bin/bash", "/app/docker/cron_entrypoint.sh"]
+    env_file: .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=ece_booking.settings
+      - TZ=Asia/Bangkok
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ece-network
+    labels:
+      - "com.ece.allow_logs=true"
+
   ece-bot:
     build:
       context: ./teams-bot
