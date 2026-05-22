@@ -1134,6 +1134,109 @@ body {
   z-index: 900;
 }
 
+/* =========================================
+   ADMIN PAGES (top-navbar layout)
+   ========================================= */
+
+.admin-page-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 100px 2rem 3rem;
+}
+
+.admin-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.admin-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.admin-page-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.admin-page-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #fefce8;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.admin-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+
+.admin-card-header {
+  background: var(--surface);
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.admin-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.admin-stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Nav tabs in admin system page */
+#systemTabs .nav-link {
+  transition: all 0.2s;
+  color: var(--text-muted);
+}
+
+#systemTabs .nav-link.active {
+  background-color: var(--tu-red) !important;
+  color: white !important;
+}
+
+#systemTabs .nav-link:hover:not(.active) {
+  background-color: var(--bg);
+}
+
+/* =========================================
+   Cards & Components
+   ========================================= */
+
 /* Cards & Components */
 .card {
   border: 1px solid var(--border);

@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายงานและสถิติ - ระบบจองห้องประชุม ECE</title>
+    <title>รายงานและสถิติ - ระบบจองห้อง ECE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'booking/styles.css' %}">
@@ -15,48 +15,19 @@
 </head>
 <body>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-logo text-center">
-            <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle mb-2" style="width: 50px; height: 50px;">
-                <span style="color: var(--tu-red); font-weight: 800; font-size: 1.2rem;">TU</span>
-            </div>
-            <h5 class="mb-0 fw-bold small text-white">ROOM BOOKING</h5>
-            <p class="small opacity-75 mb-0" style="font-size: 0.7rem;">DEPT. OF ELECTRICAL & COMPUTER ENG.</p>
-        </div>
-        <nav class="nav flex-column">
-            <div class="px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Menu</div>
-            <a class="nav-link" href="{% url 'booking:dashboard' %}"><i class="fa-solid fa-house"></i> Dashboard</a>
-            <a class="nav-link" href="{% url 'booking:booking_form' %}"><i class="fa-solid fa-calendar-plus"></i> จองห้อง</a>
-            <a class="nav-link" href="{% url 'booking:my_bookings' %}"><i class="fa-solid fa-list-check"></i> การจองของฉัน</a>
-            <a class="nav-link" href="{% url 'booking:calendar' %}"><i class="fa-solid fa-calendar-days"></i> ปฏิทินห้อง</a>
-            <div class="mt-4 px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Admin</div>
-            <a class="nav-link" href="{% url 'booking:approval_queue' %}"><i class="fa-solid fa-clipboard-check"></i> อนุมัติการจอง</a>
-            <a class="nav-link active" href="{% url 'booking:admin_reports' %}"><i class="fa-solid fa-chart-pie"></i> รายงาน</a>
-            <a class="nav-link" href="{% url 'booking:admin_system' %}"><i class="fa-solid fa-gears"></i> จัดการระบบ</a>
-            <div class="mt-auto pt-4 border-top border-white border-opacity-10">
-                <a class="nav-link text-white-50" href="{% url 'booking:logout' %}"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
-            </div>
-        </nav>
-    </div>
+    {% include 'booking/navbar.html' with active_page='admin_reports' %}
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <header class="top-header rounded-4 mb-4 shadow-sm">
-            <h4 class="mb-0 fw-bold">รายงาน (Reports)</h4>
-            <div class="d-flex align-items-center gap-3">
-                <div class="text-end d-none d-md-block">
-                    <p class="mb-0 fw-bold small">{{ display_name }}</p>
-                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Admin</p>
-                </div>
-                <div class="bg-light rounded-circle p-2 border">
-                    <i class="fa-solid fa-user-gear fa-lg" style="color: var(--tu-red);"></i>
-                </div>
+    <div class="admin-page-wrapper">
+
+        <div class="admin-page-header">
+            <div>
+                <h4 class="admin-page-title"><i class="fa-solid fa-chart-pie me-2"></i>รายงานและสถิติ</h4>
+                <p class="admin-page-subtitle">ภาพรวมการใช้งานห้องและสถิติการจอง</p>
             </div>
-        </header>
+        </div>
 
         <!-- Filter Form -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+        <div class="admin-card p-4 mb-4">
             <form method="GET" action="{% url 'booking:admin_reports' %}" class="row g-3 align-items-end">
                 <div class="col-md-4">
                     <label class="form-label fw-bold text-muted small"><i class="fa-solid fa-calendar me-1"></i> ตั้งแต่วันที่</label>
@@ -80,34 +51,34 @@
         <!-- Summary Cards -->
         <div class="row g-4 mb-4">
             <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
-                    <div class="fs-2 fw-bold" style="color: var(--tu-red);">{{ total_bookings }}</div>
-                    <div class="small text-muted">คำขอทั้งหมดในช่วงเวลา</div>
+                <div class="admin-stat-card">
+                    <div class="admin-stat-value" style="color: var(--tu-red);">{{ total_bookings }}</div>
+                    <div class="admin-stat-label">คำขอทั้งหมดในช่วงเวลา</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
-                    <div class="fs-2 fw-bold text-warning">{{ pending_count }}</div>
-                    <div class="small text-muted">รออนุมัติ</div>
+                <div class="admin-stat-card">
+                    <div class="admin-stat-value text-warning">{{ pending_count }}</div>
+                    <div class="admin-stat-label">รออนุมัติ</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
-                    <div class="fs-2 fw-bold text-success">{{ approved_count }}</div>
-                    <div class="small text-muted">อนุมัติแล้ว</div>
+                <div class="admin-stat-card">
+                    <div class="admin-stat-value text-success">{{ approved_count }}</div>
+                    <div class="admin-stat-label">อนุมัติแล้ว</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
-                    <div class="fs-2 fw-bold text-danger">{{ rejected_count }}</div>
-                    <div class="small text-muted">ปฏิเสธ / ยกเลิก</div>
+                <div class="admin-stat-card">
+                    <div class="admin-stat-value text-danger">{{ rejected_count }}</div>
+                    <div class="admin-stat-label">ปฏิเสธ / ยกเลิก</div>
                 </div>
             </div>
         </div>
 
         <!-- Room Usage & Utilization Table -->
-        <div class="card border-0 shadow-sm overflow-hidden mb-4 rounded-4">
-            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div class="admin-card mb-4">
+            <div class="admin-card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold"><i class="fa-solid fa-chart-bar me-2 text-muted"></i> ตารางอัตราการใช้งานแต่ละห้อง (เฉพาะที่อนุมัติแล้ว)</h6>
                 <span class="badge bg-light text-dark border fw-normal">วันทำงานช่วงที่กรอง: {{ weekdays_count }} วัน</span>
             </div>
@@ -156,11 +127,11 @@
         <!-- Statistics Grouped by Purpose and Program -->
         <div class="row g-4 mb-5">
             <div class="col-md-6">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-header bg-white py-3 border-bottom">
+                <div class="admin-card h-100">
+                    <div class="admin-card-header">
                         <h6 class="mb-0 fw-bold"><i class="fa-solid fa-graduation-cap me-2 text-muted"></i> แยกตามวัตถุประสงค์ (Purpose)</h6>
                     </div>
-                    <div class="card-body py-4">
+                    <div class="p-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="text-muted"><i class="fa-solid fa-circle-play me-2 text-primary small"></i>สอนปกติ / ชดเชย / เสริม</span>
                             <span class="fw-bold fs-5 text-dark">{{ purpose_stats.COURSE }} ครั้ง</span>
@@ -173,11 +144,11 @@
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-header bg-white py-3 border-bottom">
+                <div class="admin-card h-100">
+                    <div class="admin-card-header">
                         <h6 class="mb-0 fw-bold"><i class="fa-solid fa-school me-2 text-muted"></i> แยกตามหลักสูตร (Program)</h6>
                     </div>
-                    <div class="card-body py-4">
+                    <div class="p-4">
                         <div class="row g-3">
                             <div class="col-6 mb-2">
                                 <div class="text-muted small">ปริญญาตรีภาคปกติ</div>
@@ -206,9 +177,7 @@
     <script>
         document.querySelectorAll('.progress-bar').forEach(function(bar) {
             var w = bar.getAttribute('data-width');
-            if (w) {
-                bar.style.width = w + '%';
-            }
+            if (w) { bar.style.width = w + '%'; }
         });
     </script>
     <script src="{% static 'booking/motion.js' %}"></script>
