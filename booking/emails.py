@@ -57,8 +57,7 @@ def notify_booking_created(booking) -> None:
         f"มีคำขอจองห้องใหม่รออนุมัติ\n\n"
         f"ผู้จอง  : {booking.booker_name or booking.booker_id} ({booking.booker_id})\n"
         f"ห้อง    : {booking.room.code}\n"
-        f"วันที่   : {booking.start_date.strftime('%d/%m/%Y')}\n"
-        f"เวลา    : {booking.start_time.strftime('%H:%M')} - {booking.end_time.strftime('%H:%M')}\n"
+        f"{_format_schedule(booking)}\n"
         f"{detail}\n"
         f"หมายเหตุ: {booking.notes or '-'}\n\n"
         f"กรุณาเข้าสู่ระบบเพื่ออนุมัติหรือปฏิเสธคำขอ"
@@ -75,9 +74,8 @@ def notify_booking_approved(booking) -> None:
     subject = f"[จองห้อง] อนุมัติแล้ว — {booking.room.code} วันที่ {booking.start_date.strftime('%d/%m/%Y')}"
     body = (
         f"การจองของคุณได้รับการอนุมัติแล้ว\n\n"
-        f"ห้อง   : {booking.room.code}\n"
-        f"วันที่  : {booking.start_date.strftime('%d/%m/%Y')}\n"
-        f"เวลา   : {booking.start_time.strftime('%H:%M')} - {booking.end_time.strftime('%H:%M')}\n"
+        f"ห้อง      : {booking.room.code}\n"
+        f"{_format_schedule(booking)}\n"
         f"อนุมัติโดย: {booking.approval_by}\n\n"
         f"ขอบคุณที่ใช้บริการ ระบบจองห้อง ECE"
     )
@@ -94,8 +92,7 @@ def notify_booking_rejected(booking, reason: str = "") -> None:
     body = (
         f"ขออภัย คำขอจองห้องของคุณถูกปฏิเสธ\n\n"
         f"ห้อง   : {booking.room.code}\n"
-        f"วันที่  : {booking.start_date.strftime('%d/%m/%Y')}\n"
-        f"เวลา   : {booking.start_time.strftime('%H:%M')} - {booking.end_time.strftime('%H:%M')}\n"
+        f"{_format_schedule(booking)}\n"
         f"เหตุผล : {reason or 'ไม่ได้ระบุเหตุผล'}\n\n"
         f"หากมีข้อสงสัยกรุณาติดต่อเจ้าหน้าที่ภาควิชา"
     )
@@ -113,15 +110,40 @@ def notify_booking_cancelled(booking) -> None:
         f"การจองต่อไปนี้ถูกยกเลิกโดยผู้จอง\n\n"
         f"ผู้จอง  : {booking.booker_name or booking.booker_id} ({booking.booker_id})\n"
         f"ห้อง    : {booking.room.code}\n"
-        f"วันที่   : {booking.start_date.strftime('%d/%m/%Y')}\n"
-        f"เวลา    : {booking.start_time.strftime('%H:%M')} - {booking.end_time.strftime('%H:%M')}\n"
+        f"{_format_schedule(booking)}\n"
     )
     _send(subject, body, admin_email)
 
 
 # ---------------------------------------------------------------------------
-# Internal helper
+# Internal helpers
 # ---------------------------------------------------------------------------
+
+_DAY_NAMES = {0: 'อาทิตย์', 1: 'จันทร์', 2: 'อังคาร', 3: 'พุธ', 4: 'พฤหัสบดี', 5: 'ศุกร์', 6: 'เสาร์'}
+
+
+def _format_schedule(booking) -> str:
+    """Return a human-readable schedule string for the booking.
+
+    Single-day  → "วันที่  : 28/05/2026\nเวลา    : 09:00 - 12:00"
+    Recurring   → "ช่วงวันที่: 01/05/2026 - 30/06/2026
+                   ทุกวัน   : จันทร์, พุธ, ศุกร์
+                   เวลา     : 09:00 - 12:00"
+    """
+    time_str = f"{booking.start_time.strftime('%H:%M')} - {booking.end_time.strftime('%H:%M')}"
+    if booking.days_of_week and booking.start_date != booking.end_date:
+        days = sorted(booking.days_of_week)
+        days_str = ', '.join(_DAY_NAMES.get(d, str(d)) for d in days)
+        return (
+            f"ช่วงวันที่: {booking.start_date.strftime('%d/%m/%Y')} - {booking.end_date.strftime('%d/%m/%Y')}\n"
+            f"ทุกวัน   : {days_str}\n"
+            f"เวลา     : {time_str}"
+        )
+    return (
+        f"วันที่   : {booking.start_date.strftime('%d/%m/%Y')}\n"
+        f"เวลา    : {time_str}"
+    )
+
 
 def _get_booker_email(booking) -> str:
     """Get the booker's email from Django User, falling back to empty string."""
