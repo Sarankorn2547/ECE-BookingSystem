@@ -1,0 +1,471 @@
+/* =========================================
+   ECE MOTION SYSTEM — Animations & Effects
+   ========================================= */
+
+/* --- Page Load Transition --- */
+body {
+  animation: pageLoad 0.6s ease-out;
+}
+
+@keyframes pageLoad {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Scroll Reveal (fade-up on scroll) --- */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delays for children */
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+/* Reveal from left */
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Reveal from right */
+.reveal-right {
+  opacity: 0;
+  transform: translateX(40px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Scale in */
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal-scale.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* --- Navbar Animation --- */
+.home-navbar {
+  animation: navSlideDown 0.5s ease-out;
+}
+
+@keyframes navSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.home-navbar .nav-link {
+  position: relative;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.home-navbar .nav-link:hover {
+  transform: translateY(-2px);
+}
+
+.home-navbar .nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--ece-blue);
+  transition: width 0.3s ease, left 0.3s ease;
+  border-radius: 2px;
+}
+
+.home-navbar .nav-link:hover::after,
+.home-navbar .nav-link.active::after {
+  width: 80%;
+  left: 10%;
+}
+
+/* --- Hero Section Animation --- */
+.home-hero-content,
+.page-header-content {
+  animation: heroFadeUp 0.8s ease-out 0.2s both;
+}
+
+@keyframes heroFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.home-hero-greeting {
+  animation: heroFadeUp 0.8s ease-out 0.3s both;
+}
+
+.home-hero-title {
+  animation: heroFadeUp 0.8s ease-out 0.5s both;
+}
+
+.home-hero-dept {
+  animation: heroFadeUp 0.8s ease-out 0.7s both;
+}
+
+/* --- Login Page Animations --- */
+.login-logo-area {
+  animation: loginLogoIn 0.8s ease-out 0.1s both;
+}
+
+@keyframes loginLogoIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.login-card {
+  animation: loginCardIn 0.7s ease-out 0.3s both;
+}
+
+@keyframes loginCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* --- Quick Action Cards — Hover Effects --- */
+.home-action-card {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.3s ease,
+              border-color 0.3s ease;
+}
+
+.home-action-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+  border-color: var(--ece-blue);
+}
+
+.home-action-card:active {
+  transform: translateY(-2px) scale(0.99);
+  transition-duration: 0.1s;
+}
+
+.home-action-icon {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.home-action-card:hover .home-action-icon {
+  transform: scale(1.15) rotate(-5deg);
+}
+
+.home-action-arrow {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  opacity: 0.4;
+}
+
+.home-action-card:hover .home-action-arrow {
+  transform: translateX(6px);
+  opacity: 1;
+}
+
+/* --- ECE Cards — Hover & Reveal --- */
+.ece-card {
+  transition: transform 0.3s ease,
+              box-shadow 0.3s ease,
+              border-color 0.3s ease;
+}
+
+.ece-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+}
+
+/* --- Room Select Cards --- */
+.room-select-card {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.3s ease,
+              border-color 0.3s ease;
+}
+
+.room-select-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(111, 223, 254, 0.18);
+}
+
+.btn-check:checked + .room-select-card {
+  animation: roomSelected 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes roomSelected {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* --- Buttons — Hover Effects --- */
+.ece-btn-primary,
+.login-btn,
+.btn-view-all {
+  transition: transform 0.2s ease,
+              box-shadow 0.3s ease,
+              background-color 0.3s ease;
+}
+
+.ece-btn-primary:hover,
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(111, 223, 254, 0.35);
+}
+
+.ece-btn-primary:active,
+.login-btn:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.1s;
+}
+
+/* --- Table Row Hover --- */
+.table tbody tr {
+  transition: background-color 0.25s ease, transform 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: rgba(111, 223, 254, 0.06) !important;
+}
+
+/* --- Badge / Pill Pulse --- */
+.badge {
+  transition: transform 0.2s ease;
+}
+
+.badge:hover {
+  transform: scale(1.08);
+}
+
+/* --- Form Inputs Focus Animation --- */
+.login-form-input,
+.ece-form-input {
+  transition: border-color 0.3s ease,
+              box-shadow 0.3s ease,
+              transform 0.2s ease;
+}
+
+.login-form-input:focus,
+.ece-form-input:focus {
+  transform: translateY(-1px);
+}
+
+/* --- Calendar Specific Animations --- */
+
+/* Room filter pills */
+.cal-room-pill {
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cal-room-pill:hover {
+  transform: translateY(-2px) scale(1.05);
+}
+
+.cal-room-pill.active {
+  animation: pillActivate 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pillActivate {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+/* View toggle buttons */
+.cal-view-btn {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cal-view-btn:hover {
+  transform: translateY(-1px);
+}
+
+.cal-view-btn.active {
+  animation: viewActivate 0.3s ease;
+}
+
+@keyframes viewActivate {
+  from { transform: scale(0.9); opacity: 0.5; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Date nav buttons */
+.cal-date-nav-btn {
+  transition: all 0.2s ease;
+}
+
+.cal-date-nav-btn:hover {
+  transform: scale(1.15);
+}
+
+.cal-date-nav-btn:active {
+  transform: scale(0.9);
+}
+
+/* Calendar events hover */
+.fc-event {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.3s ease;
+}
+
+.fc-event:hover {
+  transform: scale(1.04) translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+  z-index: 10 !important;
+}
+
+/* --- My Bookings — Status Tabs --- */
+.ece-tab {
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.ece-tab:hover {
+  transform: translateY(-1px);
+}
+
+.ece-tab.active {
+  animation: tabActivate 0.3s ease;
+}
+
+@keyframes tabActivate {
+  from { transform: scale(0.95); }
+  to { transform: scale(1); }
+}
+
+/* --- Booking Form Steps --- */
+.ece-card-header h5 .step-badge {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ece-card:hover .step-badge {
+  transform: scale(1.2) rotate(-10deg);
+}
+
+/* --- Purpose Buttons --- */
+.ece-purpose-btn {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ece-purpose-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* --- Day Checkboxes --- */
+.ece-day-check {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ece-day-check:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* --- Recent Bookings Card --- */
+.home-recent-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.home-recent-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+}
+
+/* --- Admin Approval Cards --- */
+.ece-booking-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ece-booking-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Floating Action Button Pulse --- */
+@keyframes floatPulse {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* --- Loading Shimmer (for skeleton states) --- */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg,
+    #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* --- Smooth Page Transitions (for HTMX) --- */
+.htmx-swapping {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.htmx-settling {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* --- Respect prefers-reduced-motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

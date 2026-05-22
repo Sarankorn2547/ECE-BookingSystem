@@ -10,7 +10,7 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-change-me-in-production")
 
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = os.getenv("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost 127.0.0.1").split()
 
@@ -53,7 +53,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "ece_booking.wsgi.application"
 
-# Try importing postgres adapter, fallback to sqlite3 if not present and SQL_HOST not set (local dev environment)
+# SQLite (local dev) หรือ PostgreSQL (production) — auto-detect
 try:
     import psycopg
     has_postgres_adapter = True
@@ -105,13 +105,23 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # TU REST API
 TU_REST_API_KEY = os.getenv("TU_REST_API", "")
 
+# Email (SMTP via Gmail — Module 9)
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", EMAIL_HOST_USER)
+
 # Session
 SESSION_COOKIE_AGE = 8 * 60 * 60  # 8 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
-LOGIN_URL = "/accounts/login/"
+LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/dashboard/"
-LOGOUT_REDIRECT_URL = "/accounts/login/"
+LOGOUT_REDIRECT_URL = "/login/"
 
 MESSAGE_TAGS = {
     messages.DEBUG: "secondary",

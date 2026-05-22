@@ -1,5 +1,4 @@
 import csv
-import json
 import logging
 from datetime import timedelta, date
 from functools import wraps
@@ -18,11 +17,11 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from .models import Booking, BlackoutPeriod, BookingLog, Room, UserProfile
-from .utils import (
-    check_booking_conflict,
-    send_booking_notification_to_admin,
-    send_status_update_to_user,
-    send_cancellation_notification_to_admin,
+from .emails import (
+    notify_booking_created,
+    notify_booking_approved,
+    notify_booking_rejected,
+    notify_booking_cancelled,
 )
 
 logger = logging.getLogger(__name__)
@@ -72,7 +71,7 @@ def _get_weekdays_count(start_date, end_date):
     count = 0
     curr = start_date
     while curr <= end_date:
-        if curr.weekday() < 5:  # Monday to Friday (0 to 4)
+        if curr.weekday() < 5:
             count += 1
         curr += timedelta(days=1)
     return count
@@ -101,20 +100,17 @@ def login_view(request):
             messages.error(request, "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน")
             return render(request, "booking/login.html")
 
-        # Mock authentication fallback
+        # Mock login สำหรับ dev/ทดสอบ (admin / admin1234 หรือ testuser / test1234)
         if (username == "admin" and password == "admin1234") or (username == "testuser" and password == "test1234"):
             role = UserProfile.Role.ADMIN if username == "admin" else UserProfile.Role.LECTURER
-            display_name_th = "ผู้ดูแลระบบ (Mock Admin)" if username == "admin" else "อาจารย์ผู้ทดสอบ (Mock Lecturer)"
+            display_name_th = "ผู้ดูแลระบบ (Mock)" if username == "admin" else "อาจารย์ผู้ทดสอบ (Mock)"
             display_name_en = "System Administrator (Mock)" if username == "admin" else "Test Lecturer (Mock)"
             email = "admin@ece.engr.tu.ac.th" if username == "admin" else "lecturer@ece.engr.tu.ac.th"
             tu_status = "staff" if username == "admin" else "lecturer"
 
             user, created = User.objects.get_or_create(
                 username=username,
-                defaults={
-                    "email": email,
-                    "first_name": display_name_en[:30],
-                },
+                defaults={"email": email, "first_name": display_name_en[:30]},
             )
             if not created:
                 user.email = email
@@ -134,7 +130,6 @@ def login_view(request):
                 "faculty": "วิศวกรรมศาสตร์",
                 "tu_status": tu_status,
             }
-
             login(request, user)
             messages.success(request, f"ยินดีต้อนรับ, {display_name_th}")
             return redirect("booking:dashboard")
@@ -242,14 +237,14 @@ def booking_form_view(request):
 
     if request.method == "POST":
         room_id = request.POST.get("room")
-        start_date_str = request.POST.get("start_date")
-        end_date_str = request.POST.get("end_date")
+        start_date_str = request.POST.get("start_date") or request.POST.get("date")
+        end_date_str = request.POST.get("end_date") or start_date_str
         start_time_str = request.POST.get("start_time")
         end_time_str = request.POST.get("end_time")
         purpose_type = request.POST.get("purpose_type", "").strip()
         course_code = request.POST.get("course_code", "").strip()
         course_name = request.POST.get("course_name", "").strip()
-        program = request.POST.get("program", "").strip()
+        program = request.POST.get("program", "").strip() or None
         training_title = request.POST.get("training_title", "").strip()
         notes = request.POST.get("notes", "").strip()
         days_of_week_values = request.POST.getlist("days_of_week")
@@ -282,41 +277,35 @@ def booking_form_view(request):
             end_time = parse_time(end_time_str)
 
             if not start_date or not start_time or not end_time:
-                raise ValueError("รูปแบบวันที่หรือเวลาไม่ถูกต้อง")
+                raise ValueError("Invalid date/time format")
 
             if start_time >= end_time:
                 messages.error(request, "เวลาเริ่มต้นต้องน้อยกว่าเวลาสิ้นสุด")
                 return redirect("booking:booking_form")
 
-            days_of_week = [int(v) for v in days_of_week_values if v.isdigit()]
-
-            # Perform conflict check
-            conflict_msg = check_booking_conflict(
+            conflict_filter = Q(start_time__lt=end_time, end_time__gt=start_time)
+            conflicts = Booking.objects.filter(
                 room=room,
                 start_date=start_date,
-                end_date=end_date,
-                start_time=start_time,
-                end_time=end_time,
-                days_of_week=days_of_week or None
-            )
+                status__in=[Booking.Status.PENDING, Booking.Status.APPROVED],
+            ).filter(conflict_filter)
 
-            if conflict_msg:
-                messages.error(request, f"พบการชนกันของเวลา: {conflict_msg}")
+            if conflicts.exists():
+                messages.error(request, f"ห้อง {room.code} มีการใช้งานแล้วในช่วงเวลานี้")
                 return redirect("booking:booking_form")
 
+            days_of_week = [int(v) for v in days_of_week_values if v.isdigit()]
             recurring_pattern = {"type": "weekly", "days_of_week": days_of_week} if days_of_week else None
-            tu_profile = request.session.get("tu_profile", {})
-            booker_id = tu_profile.get("username", request.user.username)
-            booker_name = tu_profile.get("display_name_th", request.user.username)
 
-            booking = Booking.objects.create(
+            tu_profile = request.session.get("tu_profile", {})
+            new_booking = Booking.objects.create(
                 room=room,
-                booker_id=booker_id,
-                booker_name=booker_name,
+                booker_id=tu_profile.get("username", request.user.username),
+                booker_name=tu_profile.get("display_name_th", request.user.username),
                 purpose_type=purpose_type,
                 course_code=course_code or None,
                 course_name=course_name or None,
-                program=program or None,
+                program=program,
                 training_title=training_title or None,
                 start_date=start_date,
                 end_date=end_date,
@@ -327,10 +316,7 @@ def booking_form_view(request):
                 notes=notes,
                 status=Booking.Status.PENDING,
             )
-
-            BookingLog.objects.create(booking=booking, action="CREATED", actor=booker_id)
-            send_booking_notification_to_admin(booking)
-
+            notify_booking_created(new_booking)
             messages.success(request, "ส่งคำขอจองเรียบร้อยแล้ว กรุณารอการอนุมัติ")
             return redirect("booking:dashboard")
 
@@ -343,12 +329,10 @@ def booking_form_view(request):
             messages.error(request, "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง")
             return redirect("booking:booking_form")
 
-    initial_date = request.GET.get("date", "")
     context = {
         **_base_context(request),
         "rooms": Room.objects.all().order_by("code"),
         "active_page": "booking",
-        "initial_date": initial_date,
     }
     return render(request, "booking/booking-form.html", context)
 
@@ -405,7 +389,7 @@ def cancel_booking_view(request, booking_id):
     booking.status = Booking.Status.CANCELLED
     booking.save()
     BookingLog.objects.create(booking=booking, action="CANCELLED", actor=booker_id)
-    send_cancellation_notification_to_admin(booking)
+    notify_booking_cancelled(booking)
     messages.success(request, "ยกเลิกการจองเรียบร้อยแล้ว")
     return redirect("booking:my_bookings")
 
@@ -426,7 +410,7 @@ def calendar_view(request):
 
 @login_required
 def calendar_events_api(request):
-    from datetime import datetime, date, timedelta
+    from datetime import datetime
 
     start_str = request.GET.get("start", "")
     end_str = request.GET.get("end", "")
@@ -465,16 +449,22 @@ def calendar_events_api(request):
         start_t = booking.start_time.strftime("%H:%M:%S")
         end_t = booking.end_time.strftime("%H:%M:%S")
 
+        # Extended props for event detail modal
+        extra_props = {
+            "room_code": booking.room.code,
+            "room_name": booking.room.name,
+            "booker_name": booking.booker_name or booking.booker_id,
+            "status": booking.status,
+        }
+
         days_of_week = booking.days_of_week
         effective_start = max(booking.start_date, range_start)
         effective_end = min(booking.end_date, range_end)
 
         if days_of_week:
-            from datetime import timedelta as td
             current = effective_start
             while current <= effective_end:
-                curr_js_day = (current.weekday() + 1) % 7
-                if curr_js_day in days_of_week:
+                if current.weekday() in days_of_week:
                     events.append({
                         "title": title,
                         "start": f"{current.isoformat()}T{start_t}",
@@ -482,8 +472,9 @@ def calendar_events_api(request):
                         "backgroundColor": bg,
                         "borderColor": border,
                         "textColor": text,
+                        "extendedProps": extra_props,
                     })
-                current += td(days=1)
+                current += timedelta(days=1)
         else:
             events.append({
                 "title": title,
@@ -492,6 +483,7 @@ def calendar_events_api(request):
                 "backgroundColor": bg,
                 "borderColor": border,
                 "textColor": text,
+                "extendedProps": extra_props,
             })
 
     return JsonResponse(events, safe=False)
@@ -528,7 +520,7 @@ def approve_view(request, booking_id):
     booking.approval_at = timezone.now()
     booking.save()
     BookingLog.objects.create(booking=booking, action="APPROVED", actor=request.user.username)
-    send_status_update_to_user(booking)
+    notify_booking_approved(booking)
     messages.success(request, f"อนุมัติการจองของ {booking.booker_name or booking.booker_id} เรียบร้อยแล้ว")
     return redirect("booking:approval_queue")
 
@@ -549,7 +541,7 @@ def reject_view(request, booking_id):
         actor=request.user.username,
         metadata={"reason": reason},
     )
-    send_status_update_to_user(booking)
+    notify_booking_rejected(booking, reason)
     messages.success(request, f"ปฏิเสธการจองของ {booking.booker_name or booking.booker_id} เรียบร้อยแล้ว")
     return redirect("booking:approval_queue")
 
@@ -569,7 +561,6 @@ def admin_reports_view(request):
     start_date = parse_date(start_date_str) if start_date_str else None
     end_date = parse_date(end_date_str) if end_date_str else None
 
-    # Fallback to current month
     if not start_date or not end_date:
         today = date.today()
         if not start_date:
@@ -578,47 +569,39 @@ def admin_reports_view(request):
             next_month = today.replace(day=28) + timedelta(days=4)
             end_date = next_month - timedelta(days=next_month.day)
 
-    # Filter bookings within range for status counts
-    filter_bookings = Booking.objects.all()
-    if start_date:
-        filter_bookings = filter_bookings.filter(end_date__gte=start_date)
-    if end_date:
-        filter_bookings = filter_bookings.filter(start_date__lte=end_date)
-
+    filter_bookings = Booking.objects.filter(
+        end_date__gte=start_date,
+        start_date__lte=end_date,
+    )
     status_counts = {
         item["status"]: item["count"]
         for item in filter_bookings.values("status").annotate(count=Count("id"))
     }
     total_bookings = sum(status_counts.values())
 
-    # Room utilization metrics
     rooms = Room.objects.all().order_by("code")
     weekdays_count = _get_weekdays_count(start_date, end_date)
-    max_hours = weekdays_count * 10.0  # 10 business hours per weekday
-    
+    max_hours = weekdays_count * 10.0
+
     approved_bookings = Booking.objects.filter(
         status=Booking.Status.APPROVED,
         start_date__lte=end_date,
-        end_date__gte=start_date
+        end_date__gte=start_date,
     ).select_related("room")
 
     room_stats = []
     for room in rooms:
         room_hours = 0.0
         booking_count = 0
-        
         for b in approved_bookings:
             if b.room_id != room.id:
                 continue
-            
             booking_count += 1
             o_start = max(start_date, b.start_date)
             o_end = min(end_date, b.end_date)
-            
             start_hour = b.start_time.hour + b.start_time.minute / 60.0
             end_hour = b.end_time.hour + b.end_time.minute / 60.0
             duration = max(0.0, end_hour - start_hour)
-            
             curr = o_start
             while curr <= o_end:
                 b_days = set(b.days_of_week) if b.days_of_week else None
@@ -626,28 +609,13 @@ def admin_reports_view(request):
                 if (not b_days) or (curr_js_day in b_days):
                     room_hours += duration
                 curr += timedelta(days=1)
-                
-        utilization = 0.0
-        if max_hours > 0:
-            utilization = (room_hours / max_hours) * 100.0
-            utilization = min(100.0, round(utilization, 1))
-
+        utilization = min(100.0, round((room_hours / max_hours) * 100, 1)) if max_hours > 0 else 0.0
         room_stats.append({
             "room": room,
             "count": booking_count,
             "hours": round(room_hours, 1),
             "utilization": utilization,
         })
-
-    # Grouped stats for approved bookings in range
-    purpose_stats = {"COURSE": 0, "TRAINING": 0}
-    program_stats = {"BACHELOR": 0, "MASTER": 0, "TEP_TEPE": 0, "TU_PINE": 0}
-
-    for b in approved_bookings:
-        if b.purpose_type in purpose_stats:
-            purpose_stats[b.purpose_type] += 1
-        if b.program in program_stats:
-            program_stats[b.program] += 1
 
     context = {
         **_base_context(request),
@@ -658,8 +626,6 @@ def admin_reports_view(request):
         "rejected_count": status_counts.get("REJECTED", 0),
         "cancelled_count": status_counts.get("CANCELLED", 0),
         "room_stats": room_stats,
-        "purpose_stats": purpose_stats,
-        "program_stats": program_stats,
         "start_date": start_date,
         "end_date": end_date,
         "weekdays_count": weekdays_count,
@@ -674,7 +640,6 @@ def admin_reports_export_view(request):
 
     start_date_str = request.GET.get("start_date", "")
     end_date_str = request.GET.get("end_date", "")
-
     start_date = parse_date(start_date_str) if start_date_str else None
     end_date = parse_date(end_date_str) if end_date_str else None
 
@@ -693,7 +658,7 @@ def admin_reports_export_view(request):
     approved_bookings = Booking.objects.filter(
         status=Booking.Status.APPROVED,
         start_date__lte=end_date,
-        end_date__gte=start_date
+        end_date__gte=start_date,
     ).select_related("room")
 
     response = HttpResponse(content_type="text/csv; charset=utf-8-sig")
@@ -718,7 +683,6 @@ def admin_reports_export_view(request):
             start_hour = b.start_time.hour + b.start_time.minute / 60.0
             end_hour = b.end_time.hour + b.end_time.minute / 60.0
             duration = max(0.0, end_hour - start_hour)
-
             curr = o_start
             while curr <= o_end:
                 b_days = set(b.days_of_week) if b.days_of_week else None
@@ -726,12 +690,7 @@ def admin_reports_export_view(request):
                 if (not b_days) or (curr_js_day in b_days):
                     room_hours += duration
                 curr += timedelta(days=1)
-
-        utilization = 0.0
-        if max_hours > 0:
-            utilization = (room_hours / max_hours) * 100.0
-            utilization = min(100.0, round(utilization, 1))
-
+        utilization = min(100.0, round((room_hours / max_hours) * 100, 1)) if max_hours > 0 else 0.0
         writer.writerow([room.code, room.name, booking_count, round(room_hours, 1), f"{utilization}%"])
 
     return response

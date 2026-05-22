@@ -148,8 +148,18 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name='booking',
+            name='id',
+            field=models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='booking',
             name='status',
             field=models.CharField(choices=[('PENDING', 'Pending'), ('APPROVED', 'Approved'), ('REJECTED', 'Rejected'), ('CANCELLED', 'Cancelled')], default='PENDING', max_length=10),
+        ),
+        migrations.AlterField(
+            model_name='room',
+            name='id',
+            field=models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False),
         ),
         migrations.AlterField(
             model_name='room',

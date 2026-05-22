@@ -4,60 +4,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>จัดการระบบ - ระบบจองห้องประชุม TU</title>
+    <title>จัดการระบบ - ระบบจองห้อง ECE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'booking/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'booking/motion.css' %}">
 </head>
 <body>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-logo text-center">
-            <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle mb-2" style="width: 50px; height: 50px;">
-                <span style="color: var(--tu-red); font-weight: 800; font-size: 1.2rem;">TU</span>
-            </div>
-            <h5 class="mb-0 fw-bold small text-white">ROOM BOOKING</h5>
-            <p class="small opacity-75 mb-0" style="font-size: 0.7rem;">DEPT. OF ELECTRICAL & COMPUTER ENG.</p>
-        </div>
-        <nav class="nav flex-column">
-            <div class="px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Menu</div>
-            <a class="nav-link" href="{% url 'booking:dashboard' %}"><i class="fa-solid fa-house"></i> Dashboard</a>
-            <a class="nav-link" href="{% url 'booking:booking_form' %}"><i class="fa-solid fa-calendar-plus"></i> จองห้อง</a>
-            <a class="nav-link" href="{% url 'booking:my_bookings' %}"><i class="fa-solid fa-list-check"></i> การจองของฉัน</a>
-            <a class="nav-link" href="{% url 'booking:calendar' %}"><i class="fa-solid fa-calendar-days"></i> ปฏิทินห้อง</a>
-            <div class="mt-4 px-4 mb-2 small text-uppercase opacity-50 fw-bold" style="font-size: 0.65rem; color: var(--tu-gold);">Admin</div>
-            <a class="nav-link" href="{% url 'booking:approval_queue' %}"><i class="fa-solid fa-clipboard-check"></i> อนุมัติการจอง</a>
-            <a class="nav-link" href="{% url 'booking:admin_reports' %}"><i class="fa-solid fa-chart-pie"></i> รายงาน</a>
-            <a class="nav-link active" href="{% url 'booking:admin_system' %}"><i class="fa-solid fa-gears"></i> จัดการระบบ</a>
-            <div class="mt-auto pt-4 border-top border-white border-opacity-10">
-                <a class="nav-link text-white-50" href="{% url 'booking:logout' %}"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
-            </div>
-        </nav>
-    </div>
+    {% include 'booking/navbar.html' with active_page='admin_system' %}
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <header class="top-header rounded-4 mb-4 shadow-sm">
-            <h4 class="mb-0 fw-bold">จัดการระบบ (System Management)</h4>
-            <div class="d-flex align-items-center gap-3">
-                <div class="text-end d-none d-md-block">
-                    <p class="mb-0 fw-bold small">{{ display_name }}</p>
-                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">Admin</p>
-                </div>
-                <div class="bg-light rounded-circle p-2 border">
-                    <i class="fa-solid fa-user-gear fa-lg" style="color: var(--tu-red);"></i>
-                </div>
+    <div class="admin-page-wrapper">
+
+        <div class="admin-page-header">
+            <div>
+                <h4 class="admin-page-title"><i class="fa-solid fa-gears me-2"></i>จัดการระบบ</h4>
+                <p class="admin-page-subtitle">จัดการห้อง สิทธิ์ผู้ใช้ และวันหยุด/ปิดปรับปรุง</p>
             </div>
-        </header>
+        </div>
 
         {% if messages %}
-        <div class="mb-3">
+        <div class="mb-4">
             {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-3" role="alert">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
@@ -88,8 +60,8 @@
 
             <!-- Rooms Tab -->
             <div class="tab-pane fade show active" id="rooms" role="tabpanel">
-                <div class="card border-0 shadow-sm overflow-hidden">
-                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                <div class="admin-card">
+                    <div class="admin-card-header">
                         <h6 class="mb-0 fw-bold">รายชื่อห้องทั้งหมด ({{ rooms|length }} ห้อง)</h6>
                     </div>
                     <div class="table-responsive">
@@ -121,8 +93,8 @@
 
             <!-- Users Tab -->
             <div class="tab-pane fade" id="users" role="tabpanel">
-                <div class="card border-0 shadow-sm overflow-hidden">
-                    <div class="card-header bg-white py-3 border-bottom">
+                <div class="admin-card">
+                    <div class="admin-card-header">
                         <h6 class="mb-0 fw-bold">จัดการบทบาทผู้ใช้งาน</h6>
                     </div>
                     <div class="table-responsive">
@@ -177,7 +149,7 @@
             <div class="tab-pane fade" id="blackout" role="tabpanel">
                 <div class="row g-4">
                     <div class="col-md-5">
-                        <div class="card border-0 shadow-sm p-4 rounded-4">
+                        <div class="admin-card p-4">
                             <h6 class="fw-bold mb-3"><i class="fa-solid fa-calendar-plus me-2 text-warning"></i> เพิ่มช่วงเวลาปิดปรับปรุง</h6>
                             <form method="POST" action="{% url 'booking:admin_system' %}">
                                 {% csrf_token %}
@@ -212,7 +184,7 @@
                         </div>
                     </div>
                     <div class="col-md-7">
-                        <div class="card border-0 shadow-sm p-4 rounded-4 h-100">
+                        <div class="admin-card p-4 h-100">
                             <h6 class="fw-bold mb-3">รายการวันหยุด / ปิดปรับปรุง</h6>
                             <div class="list-group list-group-flush">
                                 {% for blackout in blackouts %}
@@ -247,10 +219,15 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <style>
-        .nav-tabs .nav-link { transition: all 0.2s; color: var(--text-muted); }
-        .nav-tabs .nav-link.active { background-color: var(--tu-red) !important; color: white !important; }
-        .nav-tabs .nav-link:hover:not(.active) { background-color: var(--bg); }
-    </style>
+    <script>
+        // Tab active style
+        document.querySelectorAll('#systemTabs .nav-link').forEach(function(tab) {
+            tab.addEventListener('shown.bs.tab', function() {
+                document.querySelectorAll('#systemTabs .nav-link').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+    <script src="{% static 'booking/motion.js' %}"></script>
 </body>
 </html>
