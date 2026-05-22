@@ -1335,80 +1335,492 @@ body {
 }
 
 /* =========================================
-   RESPONSIVE
+   RESPONSIVE HAMBURGER NAVBAR
    ========================================= */
-@media (max-width: 768px) {
+
+/* Hamburger button — hidden on desktop */
+.navbar-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1200;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.navbar-hamburger span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--font-dark-blue);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+  transform-origin: center;
+}
+
+/* Animate to X when open */
+.navbar-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.navbar-hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.navbar-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Mobile menu overlay */
+.navbar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1050;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.navbar-overlay.open {
+  display: block;
+  opacity: 1;
+}
+
+/* Nav link icons — hidden on desktop */
+.home-navbar .nav-link i {
+  display: none;
+}
+
+/* Divider line — hidden on desktop */
+.nav-divider-mobile {
+  display: none;
+}
+
+
+/* =========================================
+   RESPONSIVE — Large tablets (≤ 992px)
+   ========================================= */
+@media (max-width: 992px) {
   .home-navbar {
     padding: 12px 20px;
   }
 
-  .home-navbar .navbar-nav {
-    gap: 4px;
-  }
-
   .home-navbar .nav-link {
-    font-size: 0.8rem;
-    padding: 6px 10px;
+    font-size: 0.82rem;
+    padding: 7px 12px;
   }
 
-  .home-hero {
-    min-height: 340px;
+  .page-content {
+    padding: 0 24px 40px;
   }
 
-  .home-hero-greeting {
-    font-size: 1.8rem;
-  }
-
-  .home-hero-title {
-    font-size: 2rem;
-    letter-spacing: 2px;
+  .home-recent {
+    padding: 0 24px;
   }
 
   .home-actions {
-    padding: 0 20px;
+    padding: 0 24px;
+  }
+
+  .admin-page-wrapper {
+    padding: 100px 1.5rem 3rem;
+  }
+}
+
+
+/* =========================================
+   RESPONSIVE — Mobile (≤ 768px)
+   ========================================= */
+@media (max-width: 768px) {
+
+  /* ── Navbar: Show hamburger, hide inline nav ── */
+  .navbar-hamburger {
+    display: flex;
+  }
+
+  .home-navbar .navbar-nav {
+    /* Slide-in drawer from right */
+    position: fixed;
+    top: 0;
+    right: -100%;
+    bottom: 0;
+    width: min(280px, 85vw);
+    background: #fff;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 80px 16px 24px;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+    z-index: 1100;
+    transition: right 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow-y: auto;
+  }
+
+  .home-navbar .navbar-nav.open {
+    right: 0;
+  }
+
+  .home-navbar .nav-link {
+    font-size: 1rem;
+    padding: 12px 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
     gap: 12px;
+    color: var(--font-dark-blue);
+  }
+
+  .home-navbar .nav-link i {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+    font-size: 1rem;
+    opacity: 0.7;
+  }
+
+  .home-navbar .nav-link.active i,
+  .home-navbar .nav-link:hover i {
+    opacity: 1;
+  }
+
+  .home-navbar .nav-link.logout-link {
+    margin-top: 4px;
+  }
+
+  /* Mobile divider between user/admin sections */
+  .nav-divider-mobile {
+    display: block;
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* ── Hero & Home ── */
+  .home-hero {
+    min-height: 280px;
+    padding-top: 70px;
+  }
+
+  .home-hero-greeting {
+    font-size: 1.5rem;
+  }
+
+  .home-hero-title {
+    font-size: 1.7rem;
+    letter-spacing: 2px;
+  }
+
+  .home-hero-dept {
+    font-size: 0.72rem;
+  }
+
+  .home-actions {
+    padding: 0 16px;
+    gap: 12px;
+    grid-template-columns: 1fr;
+    margin-top: -10px;
   }
 
   .home-action-card {
     min-width: unset;
+    max-width: 100%;
   }
 
   .home-recent {
-    padding: 0 20px;
+    padding: 0 16px;
+    margin: 24px auto;
   }
 
+  /* ── Login page ── */
   .login-card {
     margin: 0 16px;
-    padding: 32px 24px 28px;
+    padding: 28px 20px 24px;
+  }
+
+  .login-logo-area {
+    gap: 10px;
+    margin-bottom: 24px;
   }
 
   .login-logo-area img {
-    height: 50px;
+    height: 48px;
   }
 
+  .login-logo-title {
+    font-size: 0.9rem;
+  }
+
+  /* ── Page header ── */
   .page-header {
-    min-height: 180px;
+    min-height: 160px;
+    padding-top: 70px;
   }
 
   .page-header-title {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
   }
 
+  .page-header-subtitle {
+    font-size: 0.78rem;
+  }
+
+  /* ── Page content ── */
   .page-content {
-    padding: 0 20px 40px;
+    padding: 0 16px 32px;
   }
 
+  /* ── Tab bar ── */
   .ece-tab-bar {
     flex-wrap: wrap;
     border-radius: 14px;
+    gap: 4px;
   }
 
   .ece-tab {
-    font-size: 0.78rem;
-    padding: 6px 14px;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    flex: 1 1 auto;
+    text-align: center;
   }
 
+  /* ── Cards ── */
   .ece-card-body {
-    padding: 16px 20px;
+    padding: 16px;
+  }
+
+  .ece-card-header {
+    padding: 14px 16px;
+  }
+
+  .ece-card-footer {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .ece-card-footer > * {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* ── Room grid — 1 column on mobile ── */
+  .ece-room-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── Day checkboxes — wrap ── */
+  .d-flex.flex-wrap.gap-2 {
+    gap: 6px !important;
+  }
+
+  /* ── Toast — wrap text, don't overflow ── */
+  .home-toast-container {
+    width: calc(100% - 32px);
+    left: 16px;
+    right: 16px;
+    transform: none;
+    top: 70px;
+  }
+
+  .home-toast {
+    white-space: normal;
+    word-break: break-word;
+    font-size: 0.85rem;
+    padding: 12px 16px;
+  }
+
+  /* ── Tables — horizontal scroll ── */
+  .table-responsive-mobile {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+  }
+
+  .table {
+    min-width: 520px;
+  }
+
+  /* ── Admin pages ── */
+  .admin-page-wrapper {
+    padding: 80px 16px 2rem;
+  }
+
+  .admin-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-page-badge {
+    align-self: flex-start;
+  }
+
+  .admin-stat-card {
+    padding: 1rem;
+  }
+
+  .admin-stat-value {
+    font-size: 1.6rem;
+  }
+
+  .admin-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  /* ── Booking form ── */
+  .row.g-3 > [class*="col-md"] {
+    width: 100%;
+  }
+
+  /* ── Calendar ── */
+  .fc-toolbar {
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
+  }
+
+  .fc-toolbar-title {
+    font-size: 1rem !important;
+  }
+
+  .fc-button {
+    font-size: 0.78rem !important;
+    padding: 4px 10px !important;
+  }
+
+  /* Calendar filter card */
+  .d-flex.gap-2.flex-wrap {
+    flex-direction: column;
+    gap: 8px !important;
+  }
+
+  /* ── My Bookings search bar ── */
+  .d-flex.gap-2 .form-control,
+  .d-flex.gap-2 .form-select {
+    min-width: unset;
+    width: 100% !important;
+  }
+
+  /* Recent bookings table header */
+  .home-recent-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 16px;
+  }
+
+  .home-recent-header h5 {
+    font-size: 0.9rem;
+  }
+}
+
+
+/* =========================================
+   ADMIN SYSTEM — Tab bar scrollable on mobile
+   ========================================= */
+@media (max-width: 768px) {
+  #systemTabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  #systemTabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  #systemTabs .nav-link {
+    white-space: nowrap;
+    padding: 8px 14px;
+    font-size: 0.82rem;
+  }
+
+  /* ── Booking form — stack submit/cancel buttons ── */
+  .booking-form-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .booking-form-actions .ece-btn-primary {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .booking-form-actions .btn-link {
+    text-align: center;
+  }
+
+  /* ── Admin reports filter — stack buttons ── */
+  .admin-reports-filter-btns {
+    flex-direction: column;
+  }
+
+  .admin-reports-filter-btns .ece-btn-primary,
+  .admin-reports-filter-btns a.btn {
+    width: 100% !important;
+    justify-content: center;
+  }
+}
+
+
+/* =========================================
+   RESPONSIVE — Small phones (≤ 480px)
+   ========================================= */
+@media (max-width: 480px) {
+  .home-navbar {
+    padding: 10px 14px;
+  }
+
+  .home-hero-greeting {
+    font-size: 1.3rem;
+  }
+
+  .home-hero-title {
+    font-size: 1.4rem;
+    letter-spacing: 1px;
+  }
+
+  .page-header-title {
+    font-size: 1.2rem;
+  }
+
+  .ece-room-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ece-tab {
+    font-size: 0.74rem;
+    padding: 5px 8px;
+  }
+
+  .admin-stat-value {
+    font-size: 1.4rem;
+  }
+
+  .fc-toolbar-title {
+    font-size: 0.9rem !important;
+  }
+
+  .home-toast {
+    font-size: 0.8rem;
+    padding: 10px 14px;
   }
 }

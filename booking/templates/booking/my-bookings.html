@@ -48,7 +48,7 @@
             <form method="get" action="" class="position-relative">
                 {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
                 <i class="fa-solid fa-magnifying-glass position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                <input type="text" name="q" value="{{ search_query }}" class="ece-form-input ps-5" placeholder="ค้นหาการจอง..." style="width: 260px;">
+                <input type="text" name="q" value="{{ search_query }}" class="ece-form-input ps-5" placeholder="ค้นหาการจอง..." style="width: 260px; max-width: 100%;">
             </form>
         </div>
 
