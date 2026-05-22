@@ -231,6 +231,10 @@ class NLPParseView(APIView):
 
         save_status = "error"
         conflict_msg = ""
+        purpose_type = 'TRAINING'
+        course_code = None
+        course_name = None
+        training_title = None
         if room_id and date_str and start_time_str and end_time_str:
             try:
                 room = Room.objects.get(code=room_id)
@@ -295,29 +299,39 @@ class NLPParseView(APIView):
                 print(f"DEBUG Error in create booking: {str(e)}", flush=True)
                 save_status = "error"
 
+        # Build purpose detail string for display
         if save_status == "success":
-            msg = f"✅ **จองห้องสำเร็จ (รออนุมัติ)**\n\n"
+            if purpose_type == 'COURSE':
+                purpose_detail = f"สอนวิชา: {course_code or ''} {course_name or ''}".strip()
+            else:
+                purpose_detail = f"อบรม/กิจกรรม: {training_title or '-'}"
+        else:
+            purpose_detail = purpose or '-'
+
+        # Format date Thai-style
+        date_display = datetime.strptime(date_str, "%Y-%m-%d").strftime("%d/%m/%Y") if date_str else '-'
+
+        if save_status == "success":
+            msg = "✅ **จองห้องสำเร็จ (รออนุมัติ)**\n\n"
         elif save_status == "conflict":
             msg = f"❌ **จองไม่สำเร็จ: {conflict_msg}**\n\n"
         elif save_status == "room_not_found":
             msg = f"❌ **จองไม่สำเร็จ: ไม่พบห้อง {room_id}**\n\n"
         else:
-            msg = f"⚠️ **จองไม่สำเร็จ: ข้อมูลไม่ครบถ้วน**\n\n"
+            msg = "⚠️ **จองไม่สำเร็จ: ข้อมูลไม่ครบถ้วน**\n\n"
 
-        if is_linked:
-            display_booker = f"{booker_name} ({booker_id})"
-        else:
-            display_booker = username
+        display_booker = f"{booker_name} ({booker_id})" if is_linked else username
 
         msg += (
             f"👤 **ผู้จอง:** {display_booker}\n\n"
             f"🏢 **ห้อง:** {room_id or '-'}\n\n"
-            f"📅 **วันที่:** {date_str or '-'}\n\n"
-            f"⏰ **เวลา:** {start_time_str or '-'} - {end_time_str or '-'}"
+            f"📅 **วันที่:** {date_display}\n\n"
+            f"⏰ **เวลา:** {start_time_str or '-'} - {end_time_str or '-'}\n\n"
+            f"📚 **วัตถุประสงค์:** {purpose_detail}"
         )
         if not is_linked:
             msg += "\n\n💡 บัญชีนี้ยังไม่ได้ลิงก์กับเว็บ กรุณาเข้าใช้งานเว็บอย่างน้อย 1 ครั้ง เพื่อให้การจองขึ้นบนหน้าเว็บบอร์ด"
-            
+
         return Response({"type": "message", "text": msg})
 
     def handle_check_availability(self, result):
