@@ -1,28 +1,162 @@
-# ECE Room Booking System
+# ECE Room Booking System — CN334 HW1
 
-ระบบจองห้องประชุมและห้องเรียน ภาควิชาวิศวกรรมไฟฟ้าและคอมพิวเตอร์  
-คณะวิศวกรรมศาสตร์ มหาวิทยาลัยธรรมศาสตร์
+## ข้อมูลกลุ่ม
 
-> Django Web Application สำหรับการจองห้องประชุมและห้องเรียนจำนวน 5 ห้องภายในภาควิชา  
-> รองรับการยืนยันตัวตนผ่าน TU REST API
+| บทบาท | รหัสนักศึกษา | ชื่อ-สกุล |
+|--------|-------------|-----------|
+| หัวหน้า | 6610525013 | ณัฐรวี ช่วยวัง |
+| สมาชิก | 6610545011 | ศรัญย์กร พงศ์อัศวชัย |
+| สมาชิก | 6610625011 | ชุติกาญจน์ กีดคำ |
+| สมาชิก | 6610625037 | อาแฟนดี่ย์ แวอุเซ็ง |
+| สมาชิก | 6610685304 | รัชชานนท์ ม่วงวิเชียร |
 
----
+## การแบ่งหน้าที่
 
-## 📋 SRS Reference
+| รหัสนักศึกษา | ชื่อ-สกุล | ความรับผิดชอบ |
+|-------------|----------|--------------|
+| 6610545011 | ศรัญย์กร พงศ์อัศวชัย | P1 — Team Lead / Backend: Authentication (TU REST API), UserProfile model, Session, Role assignment |
+| 6610685304 | รัชชานนท์ ม่วงวิเชียร | P2 — Approval & Notify: Approve/Reject booking, Approval log, Email notifications (SMTP) |
+| 6610525013 | ณัฐรวี ช่วยวัง | P3 — Frontend / Calendar: FullCalendar integration, Room filter, UI/UX, CSS |
+| 6610625011 | ชุติกาญจน์ กีดคำ | P4 — Admin & Reports: Room model, BlackoutPeriod, Usage report, Utilization rate, Export CSV |
+| 6610625037 | อาแฟนดี่ย์ แวอุเซ็ง | P5 — DevOps / QA: Base templates, Permission mixins, Context processors, Settings (base/prod) |
 
-Based on [SRS Document v1.0](https://wachira.ece.engr.tu.ac.th/share/webapp/SRS_Room_Booking_std.html) — 7 เมษายน 2569
+## สิ่งที่ต้องติดตั้งก่อนรันโปรเจกต์
+
+- Python 3.10–3.13 (แนะนำ 3.13 — Python 3.14 ยังไม่รองรับ Django 5.x อย่างเป็นทางการ)
+- TU REST API Application-Key (register at [restapi.tu.ac.th](https://restapi.tu.ac.th))
+- Port 8000 ต้องว่างอยู่
+
+## วิธีรันโปรเจกต์
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Sarankorn2547/ECE-BookingSystem.git
+cd ECE-BookingSystem
+
+# 2. สร้าง virtual environment
+python -m venv venv
+.\venv\Scripts\activate   # Windows
+# source venv/bin/activate  # macOS/Linux
+
+# 3. ติดตั้ง dependencies
+pip install -r requirements.txt
+
+# 4. สร้างไฟล์ .env และใส่ Application-Key
+echo TU_REST_API=your_application_key_here > .env
+
+# 5. รัน migrations
+python manage.py migrate
+
+# 6. โหลดข้อมูลห้อง (5 ห้องตาม SRS)
+python manage.py loaddata booking/fixtures/rooms.json
+
+# 7. เปิดในเบราว์เซอร์
+python manage.py runserver
+# → http://localhost:8000
+```
+
+## บัญชีสำหรับทดสอบ
+
+| บทบาท | Username | Password |
+|--------|----------|----------|
+| Admin | `admin` | `admin1234` |
+| ผู้ใช้งาน | `testuser` | `test1234` |
+
+> บัญชีเหล่านี้ใช้สำหรับ Dev Login (ไม่ต้องผ่าน TU REST API) — สร้างผ่าน Django built-in admin ที่ `/django-admin/`
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer     | Technology                                     |
-| --------- | ---------------------------------------------- |
-| Backend   | Django 5.x (Python)                            |
-| Frontend  | Bootstrap 5, Font Awesome, HTMX               |
-| Database  | SQLite (development)                           |
-| Auth      | TU REST API (`restapi.tu.ac.th`)               |
-| Fonts     | Sarabun, Noto Sans Thai (Google Fonts)         |
+| Layer | Technology |
+|-------|-----------|
+| Backend | Django 5.x (Python) |
+| Frontend | Bootstrap 5, Font Awesome |
+| Database | SQLite (development) |
+| Auth | TU REST API (`restapi.tu.ac.th`) |
+| Fonts | Sarabun, Noto Sans Thai (Google Fonts) |
+
+---
+
+## 🔐 Environment Variables
+
+สร้างไฟล์ `.env` ที่ root ของโปรเจกต์ (อย่า commit ไฟล์นี้):
+
+```env
+# TU REST API (required)
+TU_REST_API=your_tu_application_key_here
+
+# Email — Gmail SMTP (required for Email Notifications)
+EMAIL_HOST_USER=your_gmail@gmail.com
+EMAIL_HOST_PASSWORD=your_gmail_app_password
+DEFAULT_FROM_EMAIL=your_gmail@gmail.com
+ADMIN_EMAIL=admin_who_receives_notifications@gmail.com
+```
+
+> **หมายเหตุ Gmail:** ต้องใช้ **App Password** (ไม่ใช่ password ปกติ)  
+> ไปที่ Google Account → Security → 2-Step Verification → App passwords
+
+---
+
+## 📁 Project Structure
+
+```
+ECE-BookingSystem/
+├── ece_booking/              # Django project config
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── booking/                  # Main booking app
+│   ├── views.py
+│   ├── urls.py
+│   ├── models.py             # Room, Booking, BookingLog, BlackoutPeriod, UserProfile
+│   ├── emails.py             # Email notification helpers
+│   ├── fixtures/rooms.json   # Room seed data
+│   ├── templates/booking/
+│   │   ├── navbar.html
+│   │   ├── login.html
+│   │   ├── dashboard.html
+│   │   ├── booking-form.html
+│   │   ├── my-bookings.html
+│   │   ├── calendar.html
+│   │   ├── admin-approvals.html
+│   │   ├── admin-reports.html
+│   │   └── admin-system.html
+│   └── static/booking/
+│       ├── styles.css
+│       ├── motion.css
+│       └── motion.js
+├── .env                      # ไม่ commit
+├── requirements.txt
+├── manage.py
+└── db.sqlite3
+```
+
+### URL Routes
+
+| Method | URL | สิทธิ์ |
+|--------|-----|--------|
+| GET/POST | `/login/` | — |
+| GET | `/logout/` | Login |
+| GET | `/dashboard/` | Login |
+| GET/POST | `/booking/` | Login |
+| GET | `/my-bookings/` | Login |
+| POST | `/my-bookings/<id>/cancel/` | Login |
+| GET | `/calendar/` | Login |
+| GET | `/api/calendar-events/` | Login |
+| GET | `/admin/approvals/` | **Admin** |
+| POST | `/admin/approvals/<id>/approve/` | **Admin** |
+| POST | `/admin/approvals/<id>/reject/` | **Admin** |
+| GET | `/admin/reports/` | **Admin** |
+| GET | `/admin/reports/export/` | **Admin** |
+| GET/POST | `/admin/system/` | **Admin** |
+
+---
+
+## 📋 SRS Reference
+ระบบจองห้องประชุมและห้องเรียน ภาควิชาวิศวกรรมไฟฟ้าและคอมพิวเตอร์  
+คณะวิศวกรรมศาสตร์ มหาวิทยาลัยธรรมศาสตร์
+Based on [SRS Document v1.0](https://wachira.ece.engr.tu.ac.th/share/webapp/SRS_Room_Booking_std.html) — 7 เมษายน 2569
 
 ---
 
@@ -31,7 +165,7 @@ Based on [SRS Document v1.0](https://wachira.ece.engr.tu.ac.th/share/webapp/SRS_
 ### Use Cases from SRS
 
 | Status | Use Case | Description |
-| :----: | -------- | ----------- |
+|:------:|----------|-------------|
 | ✅ Done | **UC-01: Login** | เข้าสู่ระบบผ่าน TU REST API |
 | ✅ Done | **UC-02: จองห้อง** | ฟอร์มจองห้องพร้อม backend |
 | ✅ Done | **UC-03: อนุมัติ/ปฏิเสธการจอง** | Admin อนุมัติหรือปฏิเสธพร้อมเหตุผล |
@@ -57,220 +191,52 @@ Based on [SRS Document v1.0](https://wachira.ece.engr.tu.ac.th/share/webapp/SRS_
 - [x] Dashboard page with dynamic user info from TU profile
 - [x] Welcome banner with user's Thai display name
 - [x] Navbar navigation with admin-only menu items (role-aware)
-- [x] Top header with user name and department
 - [x] Quick action cards (จองห้อง, การจองของฉัน, ปฏิทินห้อง)
 - [x] Recent bookings table — แสดง 5 รายการล่าสุดจาก DB
 
 #### ✅ Module 3 — Booking Form (Done)
 
-- [x] Template: `booking-form.html`
-- [x] Django view and URL route
-- [x] Room model (5 rooms)
-- [x] Booking model (room, user, date, time, purpose, status)
+- [x] Room model (5 rooms), Booking model
 - [x] Time slot conflict detection
 - [x] Form validation
 - [x] Save booking with Pending status
 
 #### ✅ Module 4 — My Bookings (Done)
 
-- [x] Template: `my-bookings.html`
-- [x] Django view and URL route
 - [x] List user's bookings with status filters
 - [x] Cancel booking functionality (UC-06)
 
 #### ✅ Module 5 — Calendar (Done)
 
-- [x] Template: `calendar.html`
-- [x] Django view and URL route
 - [x] FullCalendar integration with booking data
 - [x] Filter by room
 - [x] Weekly/monthly view
 
 #### ✅ Module 6 — Admin Approvals (Done)
 
-- [x] Template: `admin-approvals.html` — แปลงเป็น Django template จริง
-- [x] Django view (`approval_queue_view`) และ URL route `/admin/approvals/`
 - [x] แสดง PENDING bookings ทั้งหมดจาก DB พร้อม booker info
-- [x] Approve — POST `/admin/approvals/<id>/approve/` บันทึก approval_by, approval_at
-- [x] Reject — POST `/admin/approvals/<id>/reject/` พร้อมรับเหตุผลจาก modal form
+- [x] Approve — POST บันทึก approval_by, approval_at
+- [x] Reject — POST พร้อมรับเหตุผลจาก modal form
 - [x] บันทึก BookingLog ทุกการตัดสินใจ
 - [x] `admin_required` decorator — ป้องกันด้วย UserProfile.role = ADMIN
 
 #### ✅ Module 7 — Admin Reports (Done)
 
-- [x] Template: `admin-reports.html` — แปลงเป็น Django template จริง
-- [x] Django view (`admin_reports_view`) และ URL route `/admin/reports/`
-- [x] Summary cards: ยอดรวม, รออนุมัติ, อนุมัติแล้ว, ปฏิเสธ (ดึงจาก DB)
-- [x] ตารางการใช้งานแต่ละห้อง เรียงจากมากไปน้อย
+- [x] Summary cards: ยอดรวม, รออนุมัติ, อนุมัติแล้ว, ปฏิเสธ
+- [x] ตารางการใช้งานแต่ละห้อง + Utilization rate
+- [x] Filter by date range
+- [x] Export CSV
 
 #### ✅ Module 8 — Admin System Management (Done)
 
-- [x] Template: `admin-system.html` — แปลงเป็น Django template จริง
-- [x] Django view (`admin_system_view`) และ URL route `/admin/system/`
-- [x] Tab "จัดการห้อง" — แสดงห้องทั้งหมดจาก DB
-- [x] Tab "สิทธิ์ผู้ใช้งาน" — แสดง UserProfile ทั้งหมด, เปลี่ยน role ผ่าน dropdown (submit ทันที)
-- [x] Tab "ปิดปรับปรุง / วันหยุด" — เพิ่ม/ลบ BlackoutPeriod จาก DB
+- [x] Tab จัดการห้อง — แสดงห้องทั้งหมดจาก DB
+- [x] Tab สิทธิ์ผู้ใช้งาน — เปลี่ยน role ผ่าน dropdown
+- [x] Tab ปิดปรับปรุง/วันหยุด — เพิ่ม/ลบ BlackoutPeriod จาก DB
 
 #### ✅ Module 9 — Email Notifications (Done)
 
-- [x] SMTP configuration ผ่าน environment variables (Gmail-ready)
-- [x] `booking/emails.py` — email helper functions แยกออกจาก views
-- [x] Email เมื่อจองใหม่ (`notify_booking_created`) → แจ้ง Admin
-- [x] Email เมื่ออนุมัติ (`notify_booking_approved`) → แจ้ง Lecturer
-- [x] Email เมื่อปฏิเสธ (`notify_booking_rejected`) พร้อมเหตุผล → แจ้ง Lecturer
-- [x] Email เมื่อยกเลิก (`notify_booking_cancelled`) → แจ้ง Admin
+- [x] Email เมื่อจองใหม่ → แจ้ง Admin
+- [x] Email เมื่ออนุมัติ → แจ้ง Lecturer
+- [x] Email เมื่อปฏิเสธ พร้อมเหตุผล → แจ้ง Lecturer
+- [x] Email เมื่อยกเลิก → แจ้ง Admin
 - [x] Email error ไม่ทำให้ระบบหลักพัง (log แทน raise)
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Python 3.10–3.13 (แนะนำ 3.13 — Python 3.14 ยังไม่รองรับ Django 5.x อย่างเป็นทางการ)
-- TU REST API Application-Key (register at [restapi.tu.ac.th](https://restapi.tu.ac.th))
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/Sarankorn2547/ECE-BookingSystem.git
-cd ECE-BookingSystem
-
-# Create virtual environment
-python -m venv venv
-.\venv\Scripts\activate   # Windows
-# source venv/bin/activate  # macOS/Linux
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment — สร้างไฟล์ .env
-# (ดูตัวอย่างทั้งหมดได้ที่หัวข้อ Environment Variables ด้านล่าง)
-echo TU_REST_API=your_application_key_here > .env
-
-# Run migrations
-python manage.py migrate
-
-# Load room seed data (5 ห้องตาม SRS)
-python manage.py loaddata booking/fixtures/rooms.json
-
-# Start development server
-python manage.py runserver
-```
-
-### Access
-
-- **Login:** http://127.0.0.1:8000/login/
-- **Dashboard:** http://127.0.0.1:8000/dashboard/
-- **Admin Panel:** http://127.0.0.1:8000/admin/approvals/
-- **Django Built-in Admin:** http://127.0.0.1:8000/django-admin/
-
-### Dev Login (ทดสอบโดยไม่ต้องใช้ TU REST API)
-
-| Username | Password | Role |
-|----------|----------|------|
-| `admin` | `admin1234` | ADMIN |
-| `testuser` | `test1234` | LECTURER |
-
-> หมายเหตุ: `psycopg2` ต้องไม่ติดตั้งอยู่ในเครื่อง หากติดตั้งไว้ Django จะพยายามต่อ PostgreSQL แทน SQLite  
-> แก้ด้วย: `pip uninstall psycopg2`
-
----
-
-## 🔐 Environment Variables
-
-สร้างไฟล์ `.env` ที่ root ของโปรเจกต์ (อย่า commit ไฟล์นี้):
-
-```env
-# TU REST API (required)
-TU_REST_API=your_tu_application_key_here
-
-# Email — Gmail SMTP (required for Module 9)
-EMAIL_HOST_USER=your_gmail@gmail.com
-EMAIL_HOST_PASSWORD=your_gmail_app_password
-DEFAULT_FROM_EMAIL=your_gmail@gmail.com
-ADMIN_EMAIL=admin_who_receives_notifications@gmail.com
-
-# Optional overrides (ค่า default ใช้ได้เลย)
-# EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-# EMAIL_HOST=smtp.gmail.com
-# EMAIL_PORT=587
-# EMAIL_USE_TLS=True
-```
-
-> **หมายเหตุ Gmail:** ต้องใช้ **App Password** (ไม่ใช่ password ปกติ)  
-> ไปที่ Google Account → Security → 2-Step Verification → App passwords → สร้าง password ใหม่สำหรับ "Mail"
-
----
-
-## 📁 Project Structure
-
-```
-ECE-BookingSystem/
-├── ece_booking/              # Django project config
-│   ├── settings.py           # Settings with .env, TU API, message tags
-│   ├── urls.py               # Root URL routing
-│   ├── wsgi.py
-│   └── asgi.py
-├── booking/                  # Main booking app
-│   ├── views.py              # All views (auth, booking, calendar, admin)
-│   ├── urls.py               # App URL routing (14 routes)
-│   ├── models.py             # Room, Booking, BookingLog, BlackoutPeriod, UserProfile
-│   ├── admin.py              # Django admin registration
-│   ├── migrations/           # DB migrations
-│   ├── templates/booking/    # HTML templates
-│   │   ├── navbar.html             ✅ Role-aware (แสดง admin menu เฉพาะ Admin)
-│   │   ├── login.html              ✅ Connected
-│   │   ├── dashboard.html          ✅ Connected + recent bookings จาก DB
-│   │   ├── booking-form.html       ✅ Connected
-│   │   ├── my-bookings.html        ✅ Connected
-│   │   ├── calendar.html           ✅ Connected + FullCalendar API
-│   │   ├── admin-approvals.html    ✅ Connected (approve/reject จาก DB)
-│   │   ├── admin-reports.html      ✅ Connected (สถิติจาก DB)
-│   │   └── admin-system.html       ✅ Connected (rooms, users, blackouts จาก DB)
-│   └── static/booking/
-│       └── styles.css        # TU design system (red/gold theme)
-├── .env                      # TU_REST_API key (not committed)
-├── requirements.txt
-├── manage.py
-└── db.sqlite3
-```
-
-### URL Routes
-
-| Method | URL | View | สิทธิ์ |
-| ------ | --- | ---- | ------ |
-| GET/POST | `/login/` | login_view | — |
-| GET | `/logout/` | logout_view | Login |
-| GET | `/dashboard/` | dashboard_view | Login |
-| GET/POST | `/booking/` | booking_form_view | Login |
-| GET | `/my-bookings/` | my_bookings_view | Login |
-| POST | `/my-bookings/<id>/cancel/` | cancel_booking_view | Login |
-| GET | `/calendar/` | calendar_view | Login |
-| GET | `/api/calendar-events/` | calendar_events_api | Login |
-| GET | `/admin/approvals/` | approval_queue_view | **Admin** |
-| POST | `/admin/approvals/<id>/approve/` | approve_view | **Admin** |
-| POST | `/admin/approvals/<id>/reject/` | reject_view | **Admin** |
-| GET | `/admin/reports/` | admin_reports_view | **Admin** |
-| GET | `/admin/reports/export/` | admin_reports_export_view | **Admin** |
-| GET/POST | `/admin/system/` | admin_system_view | **Admin** |
-| — | `/django-admin/` | Django built-in admin | Superuser |
-
----
-
-## 📌 Notes
-
-- ระบบรองรับเฉพาะบุคลากรภายในภาควิชาเท่านั้น (ไม่เปิดให้ภายนอก)
-- ไม่มีระบบชำระเงินค่าห้อง
-- ห้องทั้ง 5 ห้องเป็นข้อมูลเริ่มต้น แต่ Admin สามารถเพิ่ม/แก้ไขภายหลังได้
-- การแจ้งเตือนให้ใช้อีเมล @gmail.com ในระหว่างพัฒนา
-
----
-
-## 👥 External Systems
-
-| System | Purpose |
-| ------ | ------- |
-| **TU REST API** | ยืนยันตัวตนผู้ใช้ (Authentication) |
-| **Email Server (SMTP)** | ส่งอีเมลแจ้งเตือนและยืนยันการจอง |
