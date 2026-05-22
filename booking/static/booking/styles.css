@@ -50,11 +50,24 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 16px 40px;
+  /* NO backdrop-filter here — it creates a stacking context that breaks
+     position:fixed children (drawer + overlay) on iOS Safari.
+     The blur is handled by ::before instead. */
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* Blur layer lives on pseudo-element so it doesn't create a stacking
+   context that traps the fixed-positioned drawer and overlay */
+.home-navbar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
 }
 
 .home-navbar .navbar-brand {
@@ -1358,21 +1371,13 @@ body {
   z-index: 1200;
   position: relative;
   flex-shrink: 0;
-  /* prevent Bootstrap font/line-height from inflating the spans */
-  font-size: 0;
   line-height: 0;
-}
-
-.navbar-hamburger.open {
-  overflow: visible;
 }
 
 .navbar-hamburger span {
   display: block;
   width: 20px;
   height: 2px;
-  min-height: 2px;
-  max-height: 2px;
   background: var(--font-dark-blue);
   border-radius: 2px;
   transition: all 0.3s ease;
