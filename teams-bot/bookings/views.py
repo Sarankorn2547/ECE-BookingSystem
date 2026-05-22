@@ -10,6 +10,19 @@ from django.db.models import Q
 
 TZ = pytz.timezone('Asia/Bangkok')
 
+# In-memory session store for multi-turn booking conversations
+# key: "{username}::{conversation_id}", value: session dict
+PENDING_SESSIONS = {}
+
+_CANCEL_WORDS = {'ยกเลิก', 'cancel', 'หยุด', 'ออก', 'exit', 'quit'}
+
+_PROGRAM_MAP = [
+    (['ปริญญาตรีภาคปกติ', 'ภาคปกติ', 'ปริญญาตรี', 'ปตรี', 'bachelor'], 'BACHELOR'),
+    (['ปริญญาโท', 'โท', 'master'],                                        'MASTER'),
+    (['tep-tepe', 'tepe', 'tep'],                                          'TEP_TEPE'),
+    (['tu-pine', 'tu_pine', 'pine'],                                       'TU_PINE'),
+]
+
 HELP_TEXT = (
     "🤖 **คำสั่งที่ใช้ได้ครับ**\n\n"
     "**📅 เช็คห้องว่าง**\n"
@@ -181,6 +194,11 @@ class NLPParseView(APIView):
         if re.match(r'^help$', clean_text, flags=re.IGNORECASE):
             return Response({"type": "message", "text": HELP_TEXT})
 
+        # Check for active multi-turn booking session
+        session_key = f"{username}::{teams_context.get('conversation_id', username)}"
+        if session_key in PENDING_SESSIONS:
+            return self.continue_session(clean_text, session_key, username, teams_context)
+
         # Admin commands: อนุมัติ #id / ปฏิเสธ #id เหตุผล
         admin_match = re.match(r'^(อนุมัติ|ปฏิเสธ)\s+#?([a-fA-F0-9\-]+)(?:\s+(.+))?$', clean_text.strip())
         if admin_match:
@@ -194,7 +212,7 @@ class NLPParseView(APIView):
         intent = result.get('intent')
 
         if intent == 'create_booking':
-            return self.handle_create_booking(result, username, teams_context)
+            return self.handle_create_booking(result, username, teams_context, session_key)
         elif intent == 'check_availability':
             return self.handle_check_availability(result)
         elif intent == 'check_room':
@@ -211,14 +229,205 @@ class NLPParseView(APIView):
                 "text": "🤖 ไม่เข้าใจคำสั่งนี้ครับ พิมพ์ **help** เพื่อดูคำสั่งทั้งหมด"
             })
 
-    def handle_create_booking(self, result, username, teams_context):
+    # ------------------------------------------------------------------
+    # Multi-turn session helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _parse_program(text):
+        t = text.lower()
+        for keywords, code in _PROGRAM_MAP:
+            if any(k in t for k in keywords):
+                return code
+        return None
+
+    @staticmethod
+    def _parse_course_details(text):
+        """Extract (course_code, course_name, program) from free text."""
+        code_match = re.search(r'\b([A-Za-z]{2,4})\s*(\d{3})\b', text)
+        course_code = f"{code_match.group(1).upper()}{code_match.group(2)}" if code_match else None
+        program = NLPParseView._parse_program(text)
+
+        # Remove code and program keywords to get clean course name
+        name = text
+        if code_match:
+            name = name[:code_match.start()] + name[code_match.end():]
+        for keywords, _ in _PROGRAM_MAP:
+            for kw in sorted(keywords, key=len, reverse=True):
+                name = re.sub(re.escape(kw), '', name, flags=re.IGNORECASE)
+        course_name = name.strip() or None
+        return course_code, course_name, program
+
+    def _ask_purpose_type(self, session_key, session):
+        PENDING_SESSIONS[session_key] = {**session, 'step': 'ask_purpose_type'}
+        date_display = datetime.strptime(session['date_str'], "%Y-%m-%d").strftime("%d/%m/%Y")
+        return Response({"type": "message", "text": (
+            f"📋 จองห้อง **{session['room_id']}** วันที่ **{date_display}** "
+            f"เวลา **{session['start_time_str']}–{session['end_time_str']}**\n\n"
+            "จองเพื่ออะไรครับ? ตอบ:\n"
+            "• **สอน** — สอนปกติ / ชดเชย / เสริม\n"
+            "• **อบรม** — จัดอบรม / ติว / กิจกรรม\n\n"
+            "_พิมพ์ **ยกเลิก** เพื่อยกเลิก_"
+        )})
+
+    def _ask_course_details(self, session_key, session, missing=None):
+        PENDING_SESSIONS[session_key] = {**session, 'step': 'ask_course_details'}
+        missing_str = f" (ขาด: {', '.join(missing)})" if missing else ""
+        return Response({"type": "message", "text": (
+            f"📚 กรุณาระบุข้อมูลวิชา{missing_str}\n\n"
+            "รูปแบบ: **รหัสวิชา ชื่อวิชา หลักสูตร**\n\n"
+            "หลักสูตรที่มี:\n"
+            "• **ปตรี** / ปริญญาตรีภาคปกติ\n"
+            "• **โท** / ปริญญาโท\n"
+            "• **TEP-TEPE**\n"
+            "• **TU-PINE**\n\n"
+            "ตัวอย่าง: `CN332 เครือข่ายคอมพิวเตอร์ ปริญญาตรีภาคปกติ`\n\n"
+            "_พิมพ์ **ยกเลิก** เพื่อยกเลิก_"
+        )})
+
+    def _ask_training_title(self, session_key, session):
+        PENDING_SESSIONS[session_key] = {**session, 'step': 'ask_training_title'}
+        return Response({"type": "message", "text": (
+            "📝 กรุณาระบุชื่อหัวข้อการอบรม / กิจกรรมครับ\n\n"
+            "_พิมพ์ **ยกเลิก** เพื่อยกเลิก_"
+        )})
+
+    def continue_session(self, text, session_key, username, teams_context):
+        session = PENDING_SESSIONS[session_key]
+        step = session['step']
+        t = text.strip()
+
+        if t.lower() in _CANCEL_WORDS:
+            del PENDING_SESSIONS[session_key]
+            return Response({"type": "message", "text": "❌ ยกเลิกการจองแล้วครับ"})
+
+        if step == 'ask_purpose_type':
+            t_lower = t.lower()
+            if any(k in t_lower for k in ['สอน', 'วิชา', 'ชดเชย', 'เสริม', 'เรียน', 'course']):
+                session['purpose_type'] = 'COURSE'
+                return self._ask_course_details(session_key, session)
+            elif any(k in t_lower for k in ['อบรม', 'ติว', 'ประชุม', 'กิจกรรม', 'สัมมนา', 'training', 'workshop']):
+                session['purpose_type'] = 'TRAINING'
+                return self._ask_training_title(session_key, session)
+            else:
+                return Response({"type": "message", "text": (
+                    "❓ ไม่เข้าใจครับ กรุณาตอบ **สอน** หรือ **อบรม**\n"
+                    "_พิมพ์ **ยกเลิก** เพื่อยกเลิก_"
+                )})
+
+        elif step == 'ask_course_details':
+            course_code, course_name, program = self._parse_course_details(t)
+            missing = []
+            if not course_code:
+                missing.append('รหัสวิชา')
+            if not course_name:
+                missing.append('ชื่อวิชา')
+            if not program:
+                missing.append('หลักสูตร')
+            if missing:
+                return self._ask_course_details(session_key, session, missing)
+            session['course_code'] = course_code
+            session['course_name'] = course_name
+            session['program'] = program
+            del PENDING_SESSIONS[session_key]
+            return self._do_create_booking(session, username, teams_context)
+
+        elif step == 'ask_training_title':
+            session['training_title'] = t
+            del PENDING_SESSIONS[session_key]
+            return self._do_create_booking(session, username, teams_context)
+
+        del PENDING_SESSIONS[session_key]
+        return Response({"type": "message", "text": "⚠️ เกิดข้อผิดพลาดใน session กรุณาเริ่มใหม่ครับ"})
+
+    def _do_create_booking(self, session, username, teams_context):
+        """Create booking from a complete session dict and return confirmation."""
+        room_id = session['room_id']
+        date_str = session['date_str']
+        start_time_str = session['start_time_str']
+        end_time_str = session['end_time_str']
+        booker_id = session['booker_id']
+        booker_name = session['booker_name']
+        is_linked = session['is_linked']
+        purpose_type = session.get('purpose_type', 'TRAINING')
+        course_code = session.get('course_code')
+        course_name = session.get('course_name')
+        program = session.get('program')
+        training_title = session.get('training_title') or 'จองผ่าน Teams Bot'
+
+        date_display = datetime.strptime(date_str, "%Y-%m-%d").strftime("%d/%m/%Y")
+
+        try:
+            room = Room.objects.get(code=room_id)
+            target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            start_time = datetime.strptime(start_time_str, "%H:%M").time()
+            end_time = datetime.strptime(end_time_str, "%H:%M").time()
+
+            conflict_msg = check_booking_conflict(
+                room=room, start_date=target_date, end_date=target_date,
+                start_time=start_time, end_time=end_time,
+            )
+            if conflict_msg:
+                return Response({"type": "message", "text": f"❌ **จองไม่สำเร็จ:** {conflict_msg}"})
+
+            booking = Booking.objects.create(
+                room=room,
+                booker_id=booker_id,
+                booker_name=booker_name,
+                purpose_type=purpose_type,
+                course_code=course_code,
+                course_name=course_name,
+                program=program,
+                training_title=training_title if purpose_type == 'TRAINING' else None,
+                start_date=target_date,
+                end_date=target_date,
+                start_time=start_time,
+                end_time=end_time,
+                status='PENDING',
+                teams_service_url=teams_context.get('service_url', ''),
+                teams_conversation_id=teams_context.get('conversation_id', ''),
+                teams_activity_id=teams_context.get('activity_id', ''),
+            )
+            BookingLog.objects.create(booking=booking, action="CREATED", actor=username)
+
+        except Room.DoesNotExist:
+            return Response({"type": "message", "text": f"❌ ไม่พบห้อง **{room_id}** ในระบบครับ"})
+        except Exception as e:
+            print(f"DEBUG _do_create_booking error: {e}", flush=True)
+            return Response({"type": "message", "text": "⚠️ เกิดข้อผิดพลาด กรุณาลองใหม่ครับ"})
+
+        # Build purpose line
+        if purpose_type == 'COURSE':
+            program_display = {'BACHELOR': 'ปริญญาตรีภาคปกติ', 'MASTER': 'ปริญญาโท',
+                               'TEP_TEPE': 'TEP-TEPE', 'TU_PINE': 'TU-PINE'}.get(program or '', program or '')
+            purpose_line = f"สอนวิชา {course_code or ''} {course_name or ''}  ({program_display})".strip()
+        else:
+            purpose_line = f"อบรม/กิจกรรม: {training_title}"
+
+        display_booker = f"{booker_name} ({booker_id})" if is_linked else username
+        msg = (
+            "✅ **จองห้องสำเร็จ (รออนุมัติ)**\n\n"
+            f"👤 **ผู้จอง:** {display_booker}\n\n"
+            f"🏢 **ห้อง:** {room_id}\n\n"
+            f"📅 **วันที่:** {date_display}\n\n"
+            f"⏰ **เวลา:** {start_time_str} - {end_time_str}\n\n"
+            f"📚 **วัตถุประสงค์:** {purpose_line}"
+        )
+        if not is_linked:
+            msg += "\n\n💡 บัญชีนี้ยังไม่ได้ลิงก์กับเว็บ กรุณาเข้าใช้งานเว็บอย่างน้อย 1 ครั้ง"
+        return Response({"type": "message", "text": msg})
+
+    # ------------------------------------------------------------------
+    # Main booking entry point (called from NLP result)
+    # ------------------------------------------------------------------
+
+    def handle_create_booking(self, result, username, teams_context, session_key):
         room_id = result.get('room_id')
         date_str = result.get('date')
         start_time_str = result.get('start_time')
         end_time_str = result.get('end_time')
-        purpose = result.get('purpose', '')
 
-        # Lookup mapped Django User
+        # Resolve booker identity
         mapped_user = get_mapped_user(username)
         if mapped_user:
             booker_id = mapped_user.username
@@ -229,110 +438,51 @@ class NLPParseView(APIView):
             booker_name = username
             is_linked = False
 
-        save_status = "error"
-        conflict_msg = ""
-        purpose_type = 'TRAINING'
-        course_code = None
-        course_name = None
-        training_title = None
-        if room_id and date_str and start_time_str and end_time_str:
-            try:
-                room = Room.objects.get(code=room_id)
-                target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-                start_time = datetime.strptime(start_time_str, "%H:%M").time()
-                end_time = datetime.strptime(end_time_str, "%H:%M").time()
+        # Must have room + date + time before anything else
+        if not (room_id and date_str and start_time_str and end_time_str):
+            return Response({"type": "message", "text": (
+                "⚠️ กรุณาระบุ **ห้อง วันที่ และเวลา** ให้ครบครับ\n"
+                "ตัวอย่าง: จองห้อง 406-3 พรุ่งนี้ 9-12"
+            )})
 
-                conflict_msg = check_booking_conflict(
-                    room=room,
-                    start_date=target_date,
-                    end_date=target_date,
-                    start_time=start_time,
-                    end_time=end_time
-                )
+        # Base session data (shared across all steps)
+        session = {
+            'room_id': room_id,
+            'date_str': date_str,
+            'start_time_str': start_time_str,
+            'end_time_str': end_time_str,
+            'booker_id': booker_id,
+            'booker_name': booker_name,
+            'is_linked': is_linked,
+            'purpose_type': result.get('purpose_type'),
+            'course_code': result.get('course_code'),
+            'course_name': result.get('course_name'),
+            'program': result.get('program'),
+            'training_title': result.get('training_title'),
+        }
 
-                if conflict_msg:
-                    save_status = "conflict"
-                else:
-                    # Auto-parse course code from purpose
-                    purpose_type = 'TRAINING'
-                    course_code = None
-                    course_name = None
-                    training_title = None
-                    
-                    course_match = re.search(r'([A-Z]{2,3})\s*(\d{3})', purpose, re.IGNORECASE)
-                    if course_match:
-                        purpose_type = 'COURSE'
-                        course_code = f"{course_match.group(1).upper()}{course_match.group(2)}"
-                        course_name = purpose
-                    else:
-                        training_title = purpose or "จองผ่าน Teams Bot"
+        # Step 1: need purpose type?
+        if not session['purpose_type']:
+            return self._ask_purpose_type(session_key, session)
 
-                    booking = Booking.objects.create(
-                        room=room,
-                        booker_id=booker_id,
-                        booker_name=booker_name,
-                        purpose_type=purpose_type,
-                        course_code=course_code,
-                        course_name=course_name,
-                        training_title=training_title,
-                        start_date=target_date,
-                        end_date=target_date,
-                        start_time=start_time,
-                        end_time=end_time,
-                        notes=purpose,
-                        status='PENDING',
-                        teams_service_url=teams_context.get('service_url', ''),
-                        teams_conversation_id=teams_context.get('conversation_id', ''),
-                        teams_activity_id=teams_context.get('activity_id', ''),
-                    )
-                    
-                    # Create log
-                    BookingLog.objects.create(
-                        booking=booking,
-                        action="CREATED",
-                        actor=username
-                    )
-                    save_status = "success"
-            except Room.DoesNotExist:
-                save_status = "room_not_found"
-            except Exception as e:
-                print(f"DEBUG Error in create booking: {str(e)}", flush=True)
-                save_status = "error"
+        # Step 2a: COURSE — need course details?
+        if session['purpose_type'] == 'COURSE':
+            missing = []
+            if not session['course_code']:
+                missing.append('รหัสวิชา')
+            if not session['course_name']:
+                missing.append('ชื่อวิชา')
+            if not session['program']:
+                missing.append('หลักสูตร')
+            if missing:
+                return self._ask_course_details(session_key, session, missing)
 
-        # Build purpose detail string for display
-        if save_status == "success":
-            if purpose_type == 'COURSE':
-                purpose_detail = f"สอนวิชา: {course_code or ''} {course_name or ''}".strip()
-            else:
-                purpose_detail = f"อบรม/กิจกรรม: {training_title or '-'}"
-        else:
-            purpose_detail = purpose or '-'
+        # Step 2b: TRAINING — need title?
+        if session['purpose_type'] == 'TRAINING' and not session['training_title']:
+            return self._ask_training_title(session_key, session)
 
-        # Format date Thai-style
-        date_display = datetime.strptime(date_str, "%Y-%m-%d").strftime("%d/%m/%Y") if date_str else '-'
-
-        if save_status == "success":
-            msg = "✅ **จองห้องสำเร็จ (รออนุมัติ)**\n\n"
-        elif save_status == "conflict":
-            msg = f"❌ **จองไม่สำเร็จ: {conflict_msg}**\n\n"
-        elif save_status == "room_not_found":
-            msg = f"❌ **จองไม่สำเร็จ: ไม่พบห้อง {room_id}**\n\n"
-        else:
-            msg = "⚠️ **จองไม่สำเร็จ: ข้อมูลไม่ครบถ้วน**\n\n"
-
-        display_booker = f"{booker_name} ({booker_id})" if is_linked else username
-
-        msg += (
-            f"👤 **ผู้จอง:** {display_booker}\n\n"
-            f"🏢 **ห้อง:** {room_id or '-'}\n\n"
-            f"📅 **วันที่:** {date_display}\n\n"
-            f"⏰ **เวลา:** {start_time_str or '-'} - {end_time_str or '-'}\n\n"
-            f"📚 **วัตถุประสงค์:** {purpose_detail}"
-        )
-        if not is_linked:
-            msg += "\n\n💡 บัญชีนี้ยังไม่ได้ลิงก์กับเว็บ กรุณาเข้าใช้งานเว็บอย่างน้อย 1 ครั้ง เพื่อให้การจองขึ้นบนหน้าเว็บบอร์ด"
-
-        return Response({"type": "message", "text": msg})
+        # All fields present → create immediately
+        return self._do_create_booking(session, username, teams_context)
 
     def handle_check_availability(self, result):
         date_str = result.get('date')
