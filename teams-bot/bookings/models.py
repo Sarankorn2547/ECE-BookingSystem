@@ -107,3 +107,22 @@ class BookingLog(models.Model):
 
     def __str__(self):
         return f"{self.action} on booking {self.booking_id} by {self.actor}"
+
+
+class UserProfile(models.Model):
+    class Role(models.TextChoices):
+        ADMIN = 'ADMIN', 'Admin'
+        LECTURER = 'LECTURER', 'Lecturer'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tu_uid = models.CharField(max_length=100, unique=True)
+    username = models.CharField(max_length=100)
+    role = models.CharField(max_length=20, choices=Role.choices, blank=True, default='')
+
+    class Meta:
+        db_table = 'booking_userprofile'
+        managed = False
+
+    def __str__(self):
+        return f"{self.username} ({self.role or 'no role'})"
+

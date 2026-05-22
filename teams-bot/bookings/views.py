@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .nlp_service import parse_booking_request
-from .models import Room, Booking, BlackoutPeriod, BookingLog
+from .models import Room, Booking, BlackoutPeriod, BookingLog, UserProfile
 from datetime import datetime, time, timedelta
 import pytz
 from django.db.models import Q
@@ -96,6 +96,63 @@ def check_booking_conflict(room, start_date, end_date, start_time, end_time, day
                 desc = f"{b.course_code or ''} {b.course_name or b.training_title or ''}".strip()
                 return f"ชนกับการจองที่มีอยู่แล้วของ {b.booker_name or b.booker_id} ({desc or 'ไม่มีชื่อวิชา/หัวข้อ'}) ช่วง {b.start_time.strftime('%H:%M')}-{b.end_time.strftime('%H:%M')}"
 
+def get_mapped_user(teams_name):
+    """
+    Looks up a Django User by matching their first_name case-insensitively
+    or by predicting and matching their email formats.
+    """
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    
+    if not teams_name:
+        return None
+        
+    teams_name_clean = teams_name.strip()
+    
+    # 1. Direct case-insensitive match on first_name (displayname_en in TU REST API)
+    user = User.objects.filter(first_name__iexact=teams_name_clean).first()
+    if user:
+        return user
+        
+    # 2. Derive potential emails from name and match against User.email
+    parts = [p.strip() for p in teams_name_clean.split() if p.strip()]
+    if parts:
+        first = parts[0]
+        candidates = []
+        
+        if len(parts) >= 2:
+            last = parts[-1]
+            last_clean = re.sub(r'[^a-zA-Z0-9]', '', last)
+            
+            # Student pattern: First.Last[:3]@dome.tu.ac.th
+            if len(last_clean) >= 3:
+                candidates.append(f"{first}.{last_clean[:3]}@dome.tu.ac.th".lower())
+            else:
+                candidates.append(f"{first}.{last_clean}@dome.tu.ac.th".lower())
+                
+            # Lecturer pattern 1: FirstLast[0]@tu.ac.th
+            if len(last_clean) >= 1:
+                candidates.append(f"{first}{last_clean[0]}@tu.ac.th".lower())
+                
+        # Lecturer pattern 2: First@tu.ac.th
+        candidates.append(f"{first}@tu.ac.th".lower())
+        
+        for email_candidate in candidates:
+            user = User.objects.filter(email__iexact=email_candidate).first()
+            if user:
+                return user
+
+    # 3. Part-based match on first_name contains as fallback
+    if len(parts) >= 2:
+        from django.db.models import Q
+        q = Q()
+        for part in parts:
+            if len(part) > 1:
+                q &= Q(first_name__icontains=part)
+        user = User.objects.filter(q).first()
+        if user:
+            return user
+            
     return None
 
 
@@ -161,6 +218,17 @@ class NLPParseView(APIView):
         end_time_str = result.get('end_time')
         purpose = result.get('purpose', '')
 
+        # Lookup mapped Django User
+        mapped_user = get_mapped_user(username)
+        if mapped_user:
+            booker_id = mapped_user.username
+            booker_name = mapped_user.first_name or mapped_user.username
+            is_linked = True
+        else:
+            booker_id = username
+            booker_name = username
+            is_linked = False
+
         save_status = "error"
         conflict_msg = ""
         if room_id and date_str and start_time_str and end_time_str:
@@ -197,8 +265,8 @@ class NLPParseView(APIView):
 
                     booking = Booking.objects.create(
                         room=room,
-                        booker_id=username,
-                        booker_name=username,
+                        booker_id=booker_id,
+                        booker_name=booker_name,
                         purpose_type=purpose_type,
                         course_code=course_code,
                         course_name=course_name,
@@ -236,12 +304,20 @@ class NLPParseView(APIView):
         else:
             msg = f"⚠️ **จองไม่สำเร็จ: ข้อมูลไม่ครบถ้วน**\n\n"
 
+        if is_linked:
+            display_booker = f"{booker_name} ({booker_id})"
+        else:
+            display_booker = username
+
         msg += (
-            f"👤 **ผู้จอง:** {username}\n\n"
+            f"👤 **ผู้จอง:** {display_booker}\n\n"
             f"🏢 **ห้อง:** {room_id or '-'}\n\n"
             f"📅 **วันที่:** {date_str or '-'}\n\n"
             f"⏰ **เวลา:** {start_time_str or '-'} - {end_time_str or '-'}"
         )
+        if not is_linked:
+            msg += "\n\n💡 บัญชีนี้ยังไม่ได้ลิงก์กับเว็บ กรุณาเข้าใช้งานเว็บอย่างน้อย 1 ครั้ง เพื่อให้การจองขึ้นบนหน้าเว็บบอร์ด"
+            
         return Response({"type": "message", "text": msg})
 
     def handle_check_availability(self, result):
@@ -376,9 +452,14 @@ class NLPParseView(APIView):
         current_date = now.date()
         current_time = now.time()
         
+        mapped_user = get_mapped_user(username)
+        q_user = Q(booker_id=username)
+        if mapped_user:
+            q_user |= Q(booker_id=mapped_user.username)
+
         # We want bookings where end_date > current_date OR (end_date == current_date and end_time >= current_time)
         bookings = Booking.objects.filter(
-            booker_id=username,
+            q_user,
             status__in=['PENDING', 'APPROVED']
         ).filter(
             Q(end_date__gt=current_date) | Q(end_date=current_date, end_time__gte=current_time)
@@ -387,7 +468,8 @@ class NLPParseView(APIView):
         if not bookings.exists():
             return Response({"type": "message", "text": f"📋 ไม่พบการจองที่ค้างอยู่ของคุณครับ"})
 
-        msg = f"📋 **การจองของ {username}**\n\n"
+        display_title = f"{mapped_user.first_name} ({mapped_user.username})" if mapped_user else username
+        msg = f"📋 **การจองของ {display_title}**\n\n"
         for b in bookings:
             icon = "⏳" if b.status == 'PENDING' else "✅"
             desc = f"{b.course_code or ''} {b.course_name or b.training_title or ''}".strip() or "-"
@@ -407,9 +489,14 @@ class NLPParseView(APIView):
 
         try:
             target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            mapped_user = get_mapped_user(username)
+            q_user = Q(booker_id=username)
+            if mapped_user:
+                q_user |= Q(booker_id=mapped_user.username)
+
             bookings = Booking.objects.filter(
+                q_user,
                 room__code=room_id,
-                booker_id=username,
                 start_date=target_date,
                 status__in=['PENDING', 'APPROVED']
             )
@@ -432,6 +519,23 @@ class NLPParseView(APIView):
             return Response({"type": "message", "text": f"⚠️ เกิดข้อผิดพลาด: {str(e)}"})
 
     def handle_admin_action(self, booking_id, new_status, reason, admin_name):
+        # 1. Authorize: Only users with role ADMIN in UserProfile can perform admin actions
+        mapped_user = get_mapped_user(admin_name)
+        is_admin = False
+        if mapped_user:
+            try:
+                profile = UserProfile.objects.get(tu_uid=mapped_user.username)
+                if profile.role == UserProfile.Role.ADMIN:
+                    is_admin = True
+            except UserProfile.DoesNotExist:
+                pass
+
+        if not is_admin:
+            return Response({
+                "type": "message",
+                "text": f"❌ ขออภัยครับ บัญชีของคุณ ({admin_name}) ไม่มีสิทธิ์ผู้ดูแลระบบ (Admin) ไม่สามารถอนุมัติหรือปฏิเสธการจองได้"
+            })
+
         try:
             # Handle UUID or partial UUID matching
             if len(booking_id) < 36:
